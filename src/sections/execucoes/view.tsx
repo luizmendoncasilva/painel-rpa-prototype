@@ -42,6 +42,8 @@ import { ExecutionDetailDialog } from './execution-detail-dialog';
 
 // ----------------------------------------------------------------------
 
+const ALL = '__all__';
+
 const STATUS_VARIANT: Record<TaskStatus, 'success' | 'destructive' | 'warning' | 'secondary'> = {
   COMPLETED: 'success',
   FAILED: 'destructive',
@@ -449,9 +451,9 @@ export function ExecucoesView() {
           </div>
 
           <Select
-            value={filterMotor}
+            value={filterMotor || ALL}
             onValueChange={(v: string) => {
-              setFilterMotor(v);
+              setFilterMotor(v === ALL ? '' : v);
               setFilterRpa('');
             }}
           >
@@ -459,16 +461,18 @@ export function ExecucoesView() {
               <SelectValue placeholder="Motor" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
               <SelectItem value="Fiscal">Fiscal</SelectItem>
               <SelectItem value="DP">DP</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={filterRpa} onValueChange={(v: string) => setFilterRpa(v)}>
+          <Select value={filterRpa || ALL} onValueChange={(v: string) => setFilterRpa(v === ALL ? '' : v)}>
             <SelectTrigger className="w-[104px] shrink-0 sm:w-[180px]">
               <SelectValue placeholder="RPA" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
               {availableRpas.map((r) => (
                 <SelectItem key={r.queue} value={r.queue}>
                   {r.name}
@@ -477,11 +481,12 @@ export function ExecucoesView() {
             </SelectContent>
           </Select>
 
-          <Select value={filterStatus} onValueChange={(v: string) => setFilterStatus(v)}>
+          <Select value={filterStatus || ALL} onValueChange={(v: string) => setFilterStatus(v === ALL ? '' : v)}>
             <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
               <SelectItem value="COMPLETED">Sucesso</SelectItem>
               <SelectItem value="FAILED">Falha</SelectItem>
               <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
@@ -489,11 +494,12 @@ export function ExecucoesView() {
             </SelectContent>
           </Select>
 
-          <Select value={filterOrigem} onValueChange={(v: string) => setFilterOrigem(v)}>
+          <Select value={filterOrigem || ALL} onValueChange={(v: string) => setFilterOrigem(v === ALL ? '' : v)}>
             <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
               <SelectValue placeholder="Origem" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
               {availableOrigens.map((o) => (
                 <SelectItem key={o} value={o}>
                   {o}

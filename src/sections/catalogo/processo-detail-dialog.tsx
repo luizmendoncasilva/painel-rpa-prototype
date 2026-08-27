@@ -1,3 +1,4 @@
+import type { CatalogoViewMode } from './view';
 import type { Task, ProcessoConfig } from 'src/types';
 
 import { useMemo } from 'react';
@@ -24,51 +25,47 @@ import {
   DialogDescription,
 } from 'src/components/ui';
 
+import { MiniTrail } from './mini-trail';
+
 // ----------------------------------------------------------------------
-
-const STAGE_STATUS_LABEL: Record<string, string> = {
-  COMPLETED: 'Sucesso',
-  FAILED: 'Falha',
-  IN_PROGRESS: 'Em andamento',
-  PENDING: 'Pendente',
-};
-
-const STAGE_STATUS_VARIANT: Record<string, 'success' | 'destructive' | 'warning' | 'secondary'> = {
-  COMPLETED: 'success',
-  FAILED: 'destructive',
-  IN_PROGRESS: 'warning',
-  PENDING: 'secondary',
-};
 
 interface Props {
   processo: ProcessoConfig | null;
   tasks: Task[];
+  view: CatalogoViewMode;
   onClose: () => void;
 }
 
-export function ProcessoDetailDialog({ processo, tasks, onClose }: Props) {
+export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) {
   const cases = useMemo(() => (processo ? buildProcessoCases(processo, tasks) : []), [processo, tasks]);
+  const interno = view === 'interno';
 
   const handleExport = () => {
     if (!processo) return;
     exportToCsv(
       `casos-${processo.id}`,
-      cases.map((c) => ({
-        empresa: c.empresa,
-        cnpj: c.cnpj ?? '',
-        competencia: c.competencia ?? '',
-        ...Object.fromEntries(
-          processo.stages.map((s) => [s.label, c.stageStatus[s.queue] ? STAGE_STATUS_LABEL[c.stageStatus[s.queue]!] : '—'])
-        ),
-        status_combinado: COMBO_STATUS_LABEL[c.comboStatus],
-        atualizado_em: fDateTime(c.updatedAt),
-      }))
+      cases.map((c) => {
+        const failedStage = processo.stages.find((s) => c.stageFailure[s.queue]);
+        const failure = failedStage ? c.stageFailure[failedStage.queue] : null;
+        return {
+          empresa: c.empresa,
+          cnpj: c.cnpj ?? '',
+          competencia: c.competencia ?? '',
+          base: c.base ?? '',
+          status_combinado: COMBO_STATUS_LABEL[c.comboStatus],
+          quebrou_em: failedStage?.label ?? '',
+          categoria: failure?.categoria ?? '',
+          mensagem: failure?.mensagem ?? '',
+          chamado: failure?.chamado ?? '',
+          atualizado_em: fDateTime(c.updatedAt),
+        };
+      })
     );
   };
 
   return (
     <Dialog open={Boolean(processo)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-4xl">
         {processo && (
           <>
             <DialogHeader>
@@ -96,10 +93,10 @@ export function ProcessoDetailDialog({ processo, tasks, onClose }: Props) {
             </div>
 
             <div className="flex flex-wrap gap-1.5">
-              {processo.stages.map((stage) => (
+              {processo.stages.map((stage, idx) => (
                 <Badge key={stage.queue} variant="outline" className="gap-1.5">
+                  <span className="font-mono text-[10px] text-muted-foreground">{idx + 1}</span>
                   {stage.label}
-                  <span className="font-mono text-[10px] text-muted-foreground">{stage.queue}</span>
                 </Badge>
               ))}
             </div>
@@ -114,52 +111,70 @@ export function ProcessoDetailDialog({ processo, tasks, onClose }: Props) {
               </Button>
             </div>
 
-            <div className="max-h-80 overflow-auto rounded-lg border border-border">
+            <div className="max-h-96 overflow-auto rounded-lg border border-border">
               <Table>
                 <TableHeader className="sticky top-0 bg-card">
                   <TableRow>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Competência</TableHead>
-                    {processo.stages.map((stage) => (
-                      <TableHead key={stage.queue}>{stage.label}</TableHead>
-                    ))}
+                    <TableHead>Trilha</TableHead>
                     <TableHead>Status combinado</TableHead>
+                    {interno && <TableHead>Categoria / mensagem</TableHead>}
+                    {interno && <TableHead>Chamado</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cases.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={processo.stages.length + 3}
-                        className="py-10 text-center text-sm text-muted-foreground"
-                      >
+                      <TableCell colSpan={interno ? 6 : 4} className="py-10 text-center text-sm text-muted-foreground">
                         Nenhum caso encontrado neste período.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    cases.map((c) => (
-                      <TableRow key={c.key}>
-                        <TableCell className="text-sm font-medium">{c.empresa}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{c.competencia ?? '—'}</TableCell>
-                        {processo.stages.map((stage) => {
-                          const status = c.stageStatus[stage.queue];
-                          return (
-                            <TableCell key={stage.queue}>
-                              {status ? (
-                                <Badge variant={STAGE_STATUS_VARIANT[status]}>{STAGE_STATUS_LABEL[status]}</Badge>
+                    cases.map((c) => {
+                      const failedStage = processo.stages.find((s) => c.stageFailure[s.queue]);
+                      const failure = failedStage ? c.stageFailure[failedStage.queue] : null;
+
+                      return (
+                        <TableRow key={c.key}>
+                          <TableCell className="text-sm font-medium">{c.empresa}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{c.competencia ?? '—'}</TableCell>
+                          <TableCell>
+                            <MiniTrail stages={processo.stages} stageStatus={c.stageStatus} />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={COMBO_STATUS_VARIANT[c.comboStatus]}>
+                              {COMBO_STATUS_LABEL[c.comboStatus]}
+                            </Badge>
+                          </TableCell>
+                          {interno && (
+                            <TableCell>
+                              {failure ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <Badge variant="destructive" className="w-fit text-[11px]">
+                                    {failure.categoria}
+                                  </Badge>
+                                  <span className="font-mono text-[11px] text-muted-foreground">
+                                    {failure.mensagem}
+                                  </span>
+                                </div>
                               ) : (
-                                <span className="text-xs text-muted-foreground">Não rodou</span>
+                                <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                          );
-                        })}
-                        <TableCell>
-                          <Badge variant={COMBO_STATUS_VARIANT[c.comboStatus]}>
-                            {COMBO_STATUS_LABEL[c.comboStatus]}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          )}
+                          {interno && (
+                            <TableCell>
+                              {failure?.chamado ? (
+                                <span className="font-mono text-xs text-[var(--info-text)]">{failure.chamado}</span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

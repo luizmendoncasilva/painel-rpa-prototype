@@ -149,7 +149,7 @@ export function BotLogsDialog({ open, bot, onClose }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="gap-0 p-0 sm:max-w-4xl">
+        <DialogContent className="gap-0 p-0 sm:max-w-4xl" showCloseButton={false}>
           <DialogTitle className="sr-only">Logs — {bot?.name}</DialogTitle>
 
           <div className="flex items-center justify-between px-6 pt-6 pb-1">

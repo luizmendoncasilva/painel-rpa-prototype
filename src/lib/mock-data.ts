@@ -26,13 +26,19 @@ const MACHINES = ['maquina-sp-01', 'maquina-sp-02', 'maquina-bh-01', 'maquina-rj
 
 const STATUSES: TaskStatus[] = ['COMPLETED', 'COMPLETED', 'COMPLETED', 'FAILED', 'IN_PROGRESS', 'PENDING'];
 
-const ERROR_MESSAGES = [
-  'Timeout aguardando carregamento da página',
-  'Elemento não encontrado: botão Emitir Guia',
-  'Sessão expirada durante o preenchimento',
-  'Loja não localizada no cadastro do sistema',
-  'Falha de conexão com o portal da prefeitura',
+// Categoria é campo fechado (nunca texto livre) — é o que permite agrupar
+// falhas em "Não conformidades" e decidir se vira debug do bot ou tratativa
+// humana. A mensagem é o detalhe técnico associado a cada categoria.
+const ERROR_CATEGORIES = [
+  { categoria: 'Portal fora do ar', mensagem: 'HTTP 503 no portal após 3 tentativas' },
+  { categoria: 'Credencial inválida', mensagem: '401 no login — senha alterada na origem' },
+  { categoria: 'Inscrição municipal inválida', mensagem: 'CCM não localizado para o CNPJ informado' },
+  { categoria: 'Sessão expirada', mensagem: 'sessão encerrada durante o preenchimento do formulário' },
+  { categoria: 'Loja não localizada', mensagem: 'loja não encontrada no cadastro do sistema' },
+  { categoria: 'Guia recusada no portal', mensagem: 'portal recusou a emissão: competência já encerrada' },
 ];
+
+const BASES = ['Base 1', 'Base 2', 'Base 3', 'Base 4', 'Base 5', 'Base 6', 'Base 7', 'Base 8'];
 
 function seededRandom(seed: number) {
   let value = seed;
@@ -60,6 +66,7 @@ function isoDaysAgo(days: number, hourSeed: number): string {
 // ----------------------------------------------------------------------
 
 let cachedTasks: Task[] | null = null;
+let ticketSeq = 1031;
 
 export function generateMockTasks(count = 120): Task[] {
   if (cachedTasks) return cachedTasks;
@@ -73,12 +80,15 @@ export function generateMockTasks(count = 120): Task[] {
     const queue = pick(QUEUES, r1 * QUEUES.length);
     const status = pick(STATUSES, r2 * STATUSES.length);
     const empresa = pick(EMPRESAS, r3 * EMPRESAS.length);
+    const base = pick(BASES, r2 * BASES.length);
     const daysAgo = Math.floor(r1 * 45);
     const createdAt = isoDaysAgo(daysAgo, r2);
     const durationMin = Math.floor(r3 * 90) + 1;
     const updatedDate = new Date(createdAt);
     updatedDate.setMinutes(updatedDate.getMinutes() + durationMin);
     const updatedAt = status === 'PENDING' ? createdAt : updatedDate.toISOString();
+    const errorInfo = status === 'FAILED' ? pick(ERROR_CATEGORIES, r1 * ERROR_CATEGORIES.length) : null;
+    const motor = RPA_CONFIG[queue]?.motor ?? 'Fiscal';
 
     tasks.push({
       task_id: `task-${1000 + i}`,
@@ -95,18 +105,21 @@ export function generateMockTasks(count = 120): Task[] {
       payload: {
         CNPJ: empresa.cnpj,
         competencia: createdAt.slice(0, 7),
+        base,
         variables: { CNPJ: empresa.cnpj, competencia: createdAt.slice(0, 7), origem: 'schedule' },
       },
       result: status === 'COMPLETED' ? { razao_social: empresa.razao_social, arquivos_gerados: [`guia_${i}.pdf`] } : null,
-      error: status === 'FAILED' ? pick(ERROR_MESSAGES, r1 * ERROR_MESSAGES.length) : null,
-      error_payload:
-        status === 'FAILED'
-          ? {
-              step: 'preenchimento_formulario',
-              bot_id: queue,
-              stacktrace: 'Traceback (most recent call last):\n  ...\nTimeoutError: elemento não respondeu em 30s',
-            }
-          : null,
+      error: errorInfo ? errorInfo.mensagem : null,
+      error_payload: errorInfo
+        ? {
+            step: 'preenchimento_formulario',
+            bot_id: queue,
+            categoria: errorInfo.categoria,
+            mensagem: errorInfo.mensagem,
+            chamado: `${motor === 'DP' ? 'DP' : 'FIS'}-${ticketSeq++}`,
+            stacktrace: 'Traceback (most recent call last):\n  ...\nTimeoutError: elemento não respondeu em 30s',
+          }
+        : null,
     });
   }
 
@@ -174,11 +187,12 @@ function buildMockExecutionLogs(botId: string, count = 34) {
       started_at: startedAt,
       finished_at: finished.toISOString(),
       attempt: isFailed ? Math.floor(r * 3) + 1 : 1,
-      error: isFailed ? pick(ERROR_MESSAGES, r * ERROR_MESSAGES.length) : null,
+      error: isFailed ? pick(ERROR_CATEGORIES, r * ERROR_CATEGORIES.length).mensagem : null,
       error_payload: isFailed
         ? {
             step: 'preenchimento_formulario',
             bot_id: botId,
+            categoria: pick(ERROR_CATEGORIES, r * ERROR_CATEGORIES.length).categoria,
             correlation_key: `schedule-${botId}-${startedAt.slice(0, 10)}`,
             stacktrace:
               'Traceback (most recent call last):\n  File "bot.py", line 82, in run\n    element.click()\nTimeoutError: elemento não respondeu em 30s',

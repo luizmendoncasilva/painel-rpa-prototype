@@ -1,4 +1,4 @@
-import type { Task, TaskStatus, ComboStatus, ProcessoConfig, ProcessoCaseRow } from 'src/types';
+import type { Task, TaskStatus, ComboStatus, StageFailure, ProcessoConfig, ProcessoCaseRow } from 'src/types';
 
 // ----------------------------------------------------------------------
 // Catálogo de processos de negócio — glossário pedido pelo produto na call
@@ -92,6 +92,23 @@ function extractCompetencia(payload: Record<string, unknown> | null): string | n
   return (payload.competencia as string) ?? vars?.competencia ?? null;
 }
 
+function extractBase(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  return (payload.base as string) ?? null;
+}
+
+function extractFailure(task: Task | undefined): StageFailure | null {
+  if (!task || task.status !== 'FAILED' || !task.error_payload) return null;
+  const p = task.error_payload;
+  const categoria = p.categoria as string | undefined;
+  if (!categoria) return null;
+  return {
+    categoria,
+    mensagem: (p.mensagem as string | undefined) ?? task.error ?? '',
+    chamado: (p.chamado as string | undefined) ?? '',
+  };
+}
+
 function combineStatuses(statuses: (TaskStatus | null)[]): ComboStatus {
   const present = statuses.filter((s): s is TaskStatus => s !== null);
   if (present.length === 0) return 'pendente';
@@ -122,9 +139,11 @@ export function buildProcessoCases(processo: ProcessoConfig, tasks: Task[]): Pro
   for (const [key, groupTasks] of groups) {
     const [cnpj, competencia] = key.split('__');
     const stageStatus: Record<string, TaskStatus | null> = {};
+    const stageFailure: Record<string, StageFailure | null> = {};
     for (const stage of processo.stages) {
       const stageTask = groupTasks.find((t) => t.queue === stage.queue);
       stageStatus[stage.queue] = stageTask?.status ?? null;
+      stageFailure[stage.queue] = extractFailure(stageTask);
     }
     const empresa =
       (groupTasks.find((t) => t.result?.razao_social)?.result?.razao_social as string | undefined) ??
@@ -136,7 +155,9 @@ export function buildProcessoCases(processo: ProcessoConfig, tasks: Task[]): Pro
       empresa,
       cnpj: cnpj === 'sem-cnpj' ? null : cnpj,
       competencia: competencia || null,
+      base: extractBase(groupTasks[0].payload),
       stageStatus,
+      stageFailure,
       comboStatus: combineStatuses(processo.stages.map((s) => stageStatus[s.queue])),
       updatedAt,
     });

@@ -115,12 +115,20 @@ export interface ProcessoConfig {
 
 export type ComboStatus = 'sucesso' | 'sucesso_parcial' | 'falha' | 'em_andamento' | 'pendente';
 
+export interface StageFailure {
+  categoria: string;
+  mensagem: string;
+  chamado: string;
+}
+
 export interface ProcessoCaseRow {
   key: string;
   empresa: string;
   cnpj: string | null;
   competencia: string | null;
+  base: string | null;
   stageStatus: Record<string, TaskStatus | null>;
+  stageFailure: Record<string, StageFailure | null>;
   comboStatus: ComboStatus;
   updatedAt: string;
 }

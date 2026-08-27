@@ -32,6 +32,8 @@ import {
 
 // ----------------------------------------------------------------------
 
+const ALL = '__all__';
+
 const CHART_COLORS: Record<TaskStatus, string> = {
   COMPLETED: '#16a34a',
   FAILED: '#dc2626',
@@ -338,30 +340,28 @@ export function RelatoriosView() {
       {/* Filtros */}
       <Card className="mb-6">
         <CardContent className="flex flex-wrap items-center gap-4">
-          <div className="min-w-[130px]">
-            <Select value={filterMotor} onValueChange={handleMotorChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Motor: Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fiscal">Fiscal</SelectItem>
-                <SelectItem value="DP">DP</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={filterMotor || ALL} onValueChange={(v) => handleMotorChange(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[130px] shrink-0">
+              <SelectValue placeholder="Motor: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              <SelectItem value="Fiscal">Fiscal</SelectItem>
+              <SelectItem value="DP">DP</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <div className="min-w-[240px]">
-            <Select value={filterRpa} onValueChange={handleRpaChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="RPA: Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableRpas.map((r) => (
-                  <SelectItem key={r.queue} value={r.queue}>{r.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={filterRpa || ALL} onValueChange={(v) => handleRpaChange(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[240px] shrink-0">
+              <SelectValue placeholder="RPA: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              {availableRpas.map((r) => (
+                <SelectItem key={r.queue} value={r.queue}>{r.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Input
             type="date"
