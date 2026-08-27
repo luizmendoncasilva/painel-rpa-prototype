@@ -22,6 +22,7 @@ import {
 
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { generateMockTasks } from 'src/lib/mock-data';
 import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
 import { TrackingKpiStrip } from 'src/components/tracking-kpis';
@@ -104,9 +105,12 @@ export function KpisPrototipoView() {
     (async () => {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
-        if (active) setTasks((res.data.items as Task[]) ?? []);
+        const items = (res.data.items as Task[]) ?? [];
+        // Em dev, se a API real não tem tasks ainda, preenche com dados fake só para demonstrar o layout
+        if (active) setTasks(items.length > 0 || !import.meta.env.DEV ? items : generateMockTasks());
       } catch {
-        // silencioso — a faixa de KPIs de acompanhamento cai para 0 sem dados
+        // silencioso em produção; em dev preenche com dados fake em vez de zerar tudo
+        if (active) setTasks(import.meta.env.DEV ? generateMockTasks() : []);
       }
     })();
     return () => {
