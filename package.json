@@ -2,7 +2,7 @@
   "name": "rpas-dashboard-web",
   "author": "BHub",
   "version": "1.0.0",
-  "description": "Painel do ecossistema RPAS — BHub Design System",
+  "description": "Painel do ecossistema RPAS",
   "private": true,
   "type": "module",
   "scripts": {

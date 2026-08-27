@@ -1,54 +1,30 @@
-## Prerequisites
+# Painel RPA — Protótipo
 
-- Node.js >=22 (Recommended)
+Frontend standalone do painel de administração dos RPAs (execuções, relatórios, bots,
+usuários e um protótipo de KPIs/analytics). Dados ilustrativos e login simplificado —
+feito para validar layout e conteúdo com stakeholders, não é o ambiente de produção.
 
-## Installation
+## Stack
 
-**Using Yarn (Recommended)**
+- React + Vite + TypeScript
+- Tailwind CSS v4
+- Componentes de UI escritos localmente em `src/components/ui/` (Radix UI +
+  class-variance-authority + tailwind-merge) — sem depender de nenhum pacote de
+  design system externo/privado.
+
+## Rodando localmente
 
 ```sh
-yarn install
-yarn dev
-```
-
-**Using Npm**
-
-```sh
-npm i
+npm install
 npm run dev
 ```
 
 ## Build
 
 ```sh
-yarn build
-# or
 npm run build
 ```
 
-## Mock server
+## Login
 
-By default we provide demo data from : `https://api-dev-minimal-[version].vercel.app`
-
-To set up your local server:
-
-- **Guide:** [https://docs.minimals.cc/mock-server](https://docs.minimals.cc/mock-server).
-
-- **Resource:** [Download](https://www.dropbox.com/scl/fo/bopqsyaatc8fbquswxwww/AKgu6V6ZGmxtu22MuzsL5L4?rlkey=8s55vnilwz2d8nsrcmdo2a6ci&dl=0).
-
-## Full version
-
-- Create React App ([migrate to CRA](https://docs.minimals.cc/migrate-to-cra/)).
-- Next.js
-- Vite.js
-
-## Starter version
-
-- To remove unnecessary components. This is a simplified version ([https://starter.minimals.cc/](https://starter.minimals.cc/))
-- Good to start a new project. You can copy components from the full version.
-- Make sure to install the dependencies exactly as compared to the full version.
-
----
-
-**NOTE:**
-_When copying folders remember to also copy hidden files like .env. This is important because .env files often contain environment variables that are crucial for the application to run correctly._
+Qualquer e-mail, senha `123456`.
