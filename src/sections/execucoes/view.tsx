@@ -17,6 +17,7 @@ import {
   Badge,
   Empty,
   Input,
+  Label,
   Table,
   Button,
   Select,
@@ -439,7 +440,7 @@ export function ExecucoesView() {
 
       <Card padding="none" className="min-w-0">
         {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2.5 px-4 pt-4 pb-3">
+        <div className="flex flex-wrap items-end gap-2.5 px-4 pt-4 pb-3">
           <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -450,79 +451,97 @@ export function ExecucoesView() {
             />
           </div>
 
-          <Select
-            value={filterMotor || ALL}
-            onValueChange={(v: string) => {
-              setFilterMotor(v === ALL ? '' : v);
-              setFilterRpa('');
-            }}
-          >
-            <SelectTrigger className="w-[104px] shrink-0">
-              <SelectValue placeholder="Motor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              <SelectItem value="Fiscal">Fiscal</SelectItem>
-              <SelectItem value="DP">DP</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Motor</Label>
+            <Select
+              value={filterMotor || ALL}
+              onValueChange={(v: string) => {
+                setFilterMotor(v === ALL ? '' : v);
+                setFilterRpa('');
+              }}
+            >
+              <SelectTrigger className="w-[104px] shrink-0">
+                <SelectValue placeholder="Motor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="Fiscal">Fiscal</SelectItem>
+                <SelectItem value="DP">DP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filterRpa || ALL} onValueChange={(v: string) => setFilterRpa(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[104px] shrink-0 sm:w-[180px]">
-              <SelectValue placeholder="RPA" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              {availableRpas.map((r) => (
-                <SelectItem key={r.queue} value={r.queue}>
-                  {r.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">RPA</Label>
+            <Select value={filterRpa || ALL} onValueChange={(v: string) => setFilterRpa(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[104px] shrink-0 sm:w-[180px]">
+                <SelectValue placeholder="RPA" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                {availableRpas.map((r) => (
+                  <SelectItem key={r.queue} value={r.queue}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filterStatus || ALL} onValueChange={(v: string) => setFilterStatus(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              <SelectItem value="COMPLETED">Sucesso</SelectItem>
-              <SelectItem value="FAILED">Falha</SelectItem>
-              <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
-              <SelectItem value="PENDING">Pendente</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Status</Label>
+            <Select value={filterStatus || ALL} onValueChange={(v: string) => setFilterStatus(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="COMPLETED">Sucesso</SelectItem>
+                <SelectItem value="FAILED">Falha</SelectItem>
+                <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
+                <SelectItem value="PENDING">Pendente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filterOrigem || ALL} onValueChange={(v: string) => setFilterOrigem(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
-              <SelectValue placeholder="Origem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              {availableOrigens.map((o) => (
-                <SelectItem key={o} value={o}>
-                  {o}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Origem</Label>
+            <Select value={filterOrigem || ALL} onValueChange={(v: string) => setFilterOrigem(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[104px] shrink-0 sm:w-[140px]">
+                <SelectValue placeholder="Origem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                {availableOrigens.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Input
-            type="date"
-            value={filterDateFrom}
-            onChange={(e) => setFilterDateFrom(e.target.value)}
-            className="w-[140px] shrink-0"
-            aria-label="De"
-          />
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">De</Label>
+            <Input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="w-[140px] shrink-0"
+              aria-label="De"
+            />
+          </div>
 
-          <Input
-            type="date"
-            value={filterDateTo}
-            onChange={(e) => setFilterDateTo(e.target.value)}
-            className="w-[140px] shrink-0"
-            aria-label="Até"
-          />
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Até</Label>
+            <Input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="w-[140px] shrink-0"
+              aria-label="Até"
+            />
+          </div>
 
           {hasFilters && (
             <Button size="sm" variant="outline" onClick={handleClearFilters}>

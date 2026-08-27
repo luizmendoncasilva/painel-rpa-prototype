@@ -2,7 +2,7 @@ import type { Task } from 'src/types';
 import type { KpiCategory } from './kpi-catalog';
 import type { CatalogoViewMode } from 'src/sections/catalogo/view';
 
-import { LayoutGrid } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import {
   Bar,
@@ -30,13 +30,12 @@ import {
   Card,
   Tabs,
   Alert,
-  Badge,
+  Label,
   Button,
   Select,
   TabsList,
   CardTitle,
   SelectItem,
-  IconButton,
   CardHeader,
   AlertTitle,
   CardContent,
@@ -53,11 +52,12 @@ import { NaoConformidades } from 'src/sections/catalogo/nao-conformidades';
 import { KpiCard } from './kpi-card';
 import { ContratoDados } from './contrato-dados';
 import { ProcessoAccordion } from './processo-accordion';
-import { KPI_CATALOG, CATEGORY_META, LAYOUT_PRESETS } from './kpi-catalog';
+import { KPI_CATALOG, CATEGORY_META } from './kpi-catalog';
 
 // ----------------------------------------------------------------------
 
 const CATEGORY_ORDER: KpiCategory[] = ['volume', 'confiabilidade', 'eficiencia', 'governanca'];
+const KPI_GRID = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
 
 const DONUT_DATA = [
   { name: 'Sucesso', value: 1122, color: 'var(--success-border)' },
@@ -90,8 +90,6 @@ function extractBase(payload: Record<string, unknown> | null): string | null {
 // ----------------------------------------------------------------------
 
 export function KpisPrototipoView() {
-  const [layoutId, setLayoutId] = useState(1);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterMotor, setFilterMotor] = useState('');
   const [filterProcesso, setFilterProcesso] = useState('');
@@ -99,9 +97,7 @@ export function KpisPrototipoView() {
   const [filterBase, setFilterBase] = useState('');
   const [filterCompetencia, setFilterCompetencia] = useState('');
   const [view, setView] = useState<CatalogoViewMode>('operacao');
-
-  const layout = LAYOUT_PRESETS.find((p) => p.id === layoutId) ?? LAYOUT_PRESETS[0];
-  const compact = layout.density === 'compact';
+  const [contratoOpen, setContratoOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -157,369 +153,330 @@ export function KpisPrototipoView() {
   );
 
   return (
-    <div className={cn(layout.dark && 'dark')}>
-      <div className="min-h-screen bg-background text-foreground transition-colors">
-        <DashboardContent maxWidth="xl">
-          <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h4 className="text-2xl font-semibold">Painel</h4>
-              <p className="text-sm text-muted-foreground">
-                Acompanhamento dos processos + amostragem de indicadores para stakeholders.
-              </p>
-            </div>
+    <DashboardContent maxWidth="xl">
+      <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h4 className="text-2xl font-semibold">Painel</h4>
+          <p className="text-sm text-muted-foreground">
+            Acompanhamento dos processos + amostragem de indicadores para stakeholders.
+          </p>
+        </div>
 
-            <div className="flex flex-col items-end gap-1.5">
-              <div className="flex items-center gap-2">
-                <div className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
-                  <Button
-                    size="sm"
-                    variant={view === 'operacao' ? 'default' : 'ghost'}
-                    className="h-7 px-3 text-xs"
-                    onClick={() => setView('operacao')}
-                  >
-                    Operação
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={view === 'interno' ? 'default' : 'ghost'}
-                    className="h-7 px-3 text-xs"
-                    onClick={() => setView('interno')}
-                  >
-                    Interno · detalhe
-                  </Button>
-                </div>
-                <Badge variant="outline" className="gap-1.5">
-                  Estilo {layout.id} · {layout.name}
-                </Badge>
-              </div>
-              <span className="text-[11px] text-muted-foreground">Mesma base, dois níveis de detalhe</span>
-            </div>
-          </div>
-
-          <Alert variant="warning" className="mt-4 mb-6">
-            <AlertTitle>Dados ilustrativos</AlertTitle>
-            <AlertDescription>
-              Os KPIs de amostragem abaixo são fictícios, apenas para validar layout e conteúdo — não refletem
-              execuções reais. A faixa de acompanhamento no topo usa os dados carregados de fato.
-            </AlertDescription>
-          </Alert>
-
-          <div className="mb-6 flex flex-wrap items-center gap-2.5">
-            <Select value={filterMotor || ALL} onValueChange={(v) => setFilterMotor(v === ALL ? '' : v)}>
-              <SelectTrigger className="w-[130px] shrink-0">
-                <SelectValue placeholder="Motor: Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Todos</SelectItem>
-                <SelectItem value="Fiscal">Fiscal</SelectItem>
-                <SelectItem value="DP">DP</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterProcesso || ALL} onValueChange={(v) => setFilterProcesso(v === ALL ? '' : v)}>
-              <SelectTrigger className="w-[200px] shrink-0">
-                <SelectValue placeholder="Processo: Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Todos</SelectItem>
-                {PROCESSOS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterStatus || ALL} onValueChange={(v) => setFilterStatus(v === ALL ? '' : v)}>
-              <SelectTrigger className="w-[140px] shrink-0">
-                <SelectValue placeholder="Status: Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Todos</SelectItem>
-                <SelectItem value="COMPLETED">Sucesso</SelectItem>
-                <SelectItem value="FAILED">Falha</SelectItem>
-                <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
-                <SelectItem value="PENDING">Pendente</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterBase || ALL} onValueChange={(v) => setFilterBase(v === ALL ? '' : v)}>
-              <SelectTrigger className="w-[130px] shrink-0">
-                <SelectValue placeholder="Base: Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Todas</SelectItem>
-                {bases.map((b) => (
-                  <SelectItem key={b} value={b}>
-                    {b}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filterCompetencia || ALL}
-              onValueChange={(v) => setFilterCompetencia(v === ALL ? '' : v)}
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+            <Button
+              size="sm"
+              variant={view === 'operacao' ? 'default' : 'ghost'}
+              className="h-7 px-3 text-xs"
+              onClick={() => setView('operacao')}
             >
-              <SelectTrigger className="w-[170px] shrink-0">
-                <SelectValue placeholder="Competência: Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>Todas</SelectItem>
-                {competencias.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(filterMotor || filterProcesso || filterStatus || filterBase || filterCompetencia) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setFilterMotor('');
-                  setFilterProcesso('');
-                  setFilterStatus('');
-                  setFilterBase('');
-                  setFilterCompetencia('');
-                }}
-              >
-                Limpar filtros
-              </Button>
-            )}
+              Operação
+            </Button>
+            <Button
+              size="sm"
+              variant={view === 'interno' ? 'default' : 'ghost'}
+              className="h-7 px-3 text-xs"
+              onClick={() => setView('interno')}
+            >
+              Interno · detalhe
+            </Button>
           </div>
-
-          <div className="mb-8">
-            <TrackingKpiStrip kpis={trackingKpis} totalProcessos={processosFiltrados.length} />
-          </div>
-
-          <div className="mb-8">
-            <h5 className="mb-1 text-base font-semibold">Processos</h5>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
-            </p>
-            <div className="flex flex-col gap-2.5">
-              {[...processosFiltrados]
-                .sort((a, b) => {
-                  const failA = tasksFiltradas.filter((t) => t.queue === a.stages[0]?.queue && t.status === 'FAILED').length;
-                  const failB = tasksFiltradas.filter((t) => t.queue === b.stages[0]?.queue && t.status === 'FAILED').length;
-                  return failB - failA;
-                })
-                .map((processo, idx) => (
-                  <ProcessoAccordion
-                    key={processo.id}
-                    processo={processo}
-                    tasks={tasksFiltradas}
-                    view={view}
-                    defaultOpen={idx === 0}
-                  />
-                ))}
-              {processosFiltrados.length === 0 && (
-                <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-                  Nenhum processo com os filtros atuais.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {view === 'interno' && (
-            <div className="mb-8">
-              <h5 className="mb-1 text-base font-semibold">Não conformidades</h5>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Falhas agrupadas por categoria — o que define se o caso vira debug do bot ou tratativa humana.
-              </p>
-              <NaoConformidades
-                tasks={tasksFiltradas}
-                queues={processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue))}
-              />
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h5 className="mb-1 text-base font-semibold">Contrato de dados</h5>
-            <p className="mb-3 text-xs text-muted-foreground">
-              O que o back-end precisa enviar por execução para o painel conseguir montar tudo acima.
-            </p>
-            <ContratoDados />
-          </div>
-
-          <div className="mb-3">
-            <h5 className="text-base font-semibold">Amostragem de KPIs</h5>
-            <p className="text-xs text-muted-foreground">
-              Indicadores ilustrativos organizados por categoria — separe por aba para comparar o que faz sentido
-              expor.
-            </p>
-          </div>
-
-          <Tabs defaultValue={CATEGORY_ORDER[0]} className="mb-8">
-            <TabsList>
-              {CATEGORY_ORDER.map((category) => (
-                <TabsTrigger key={category} value={category}>
-                  {CATEGORY_META[category].label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {CATEGORY_ORDER.map((category) => {
-              const meta = CATEGORY_META[category];
-              const items = KPI_CATALOG.filter((k) => k.category === category);
-
-              return (
-                <TabsContent key={category} value={category} className="mt-4">
-                  <p className="mb-3 text-xs text-muted-foreground">{meta.description}</p>
-                  <div className={cn('grid gap-3', layout.gridCols)}>
-                    {items.map((kpi) => (
-                      <KpiCard
-                        key={kpi.id}
-                        kpi={kpi}
-                        density={layout.density}
-                        accent={layout.accent}
-                        padding={layout.cardPadding}
-                      />
-                    ))}
-                  </div>
-                </TabsContent>
-              );
-            })}
-          </Tabs>
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr]">
-            <Card padding={layout.cardPadding}>
-              <CardHeader>
-                <CardTitle>Tendência temporal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={compact ? 200 : 260}>
-                  <AreaChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="protoGradSucesso" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--success-border)" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="var(--success-border)" stopOpacity={0.04} />
-                      </linearGradient>
-                      <linearGradient id="protoGradFalha" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0.04} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                    <RTooltip />
-                    <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                    <Area
-                      type="monotone"
-                      dataKey="sucesso"
-                      name="Sucesso"
-                      stroke="var(--success-border)"
-                      fill="url(#protoGradSucesso)"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="falha"
-                      name="Falha"
-                      stroke="var(--destructive)"
-                      fill="url(#protoGradFalha)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card padding={layout.cardPadding}>
-              <CardHeader>
-                <CardTitle>Desfecho do período</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={compact ? 200 : 260}>
-                  <PieChart>
-                    <Pie
-                      data={DONUT_DATA}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={compact ? 44 : 55}
-                      outerRadius={compact ? 74 : 92}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {DONUT_DATA.map((entry) => (
-                        <Cell key={entry.name} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <RTooltip />
-                    <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card padding={layout.cardPadding} className="mt-6">
-            <CardHeader>
-              <CardTitle>Volume por mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={compact ? 200 : 260}>
-                <BarChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                  <RTooltip />
-                  <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="sucesso" name="Sucesso" stackId="a" fill="var(--success-border)" radius={[0, 0, 0, 0]} maxBarSize={48} />
-                  <Bar dataKey="falha" name="Falha" stackId="a" fill="var(--destructive)" radius={[4, 4, 0, 0]} maxBarSize={48} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </DashboardContent>
-
-        {/* FAB — alterna entre os 5 estilos de layout */}
-        <div className="fixed bottom-6 right-6 z-50">
-          {pickerOpen && (
-            <Card padding="sm" className="mb-2 w-64 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-sm">Estilo do protótipo</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-1">
-                {LAYOUT_PRESETS.map((preset) => (
-                  <Button
-                    key={preset.id}
-                    type="button"
-                    variant={preset.id === layoutId ? 'default' : 'ghost'}
-                    size="sm"
-                    className="justify-start gap-2"
-                    onClick={() => {
-                      setLayoutId(preset.id);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-current text-[11px]">
-                      {preset.id}
-                    </span>
-                    <span className="flex flex-col items-start">
-                      <span className="text-xs font-semibold leading-tight">{preset.name}</span>
-                      <span className="text-[11px] font-normal leading-tight opacity-70">{preset.subtitle}</span>
-                    </span>
-                  </Button>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          <IconButton
-            aria-label="Alternar estilo do layout"
-            size="lg"
-            className="size-14 rounded-full shadow-lg"
-            onClick={() => setPickerOpen((prev) => !prev)}
-          >
-            <LayoutGrid className="size-5" />
-          </IconButton>
+          <span className="text-[11px] text-muted-foreground">Mesma base, dois níveis de detalhe</span>
         </div>
       </div>
-    </div>
+
+      <Alert variant="warning" className="mt-4 mb-6">
+        <AlertTitle>Dados ilustrativos</AlertTitle>
+        <AlertDescription>
+          Os KPIs de amostragem abaixo são fictícios, apenas para validar layout e conteúdo — não refletem
+          execuções reais. A faixa de acompanhamento no topo usa os dados carregados de fato.
+        </AlertDescription>
+      </Alert>
+
+      <div className="mb-6 flex flex-wrap items-end gap-2.5">
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Motor</Label>
+          <Select value={filterMotor || ALL} onValueChange={(v) => setFilterMotor(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[130px] shrink-0">
+              <SelectValue placeholder="Motor: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              <SelectItem value="Fiscal">Fiscal</SelectItem>
+              <SelectItem value="DP">DP</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Processo</Label>
+          <Select value={filterProcesso || ALL} onValueChange={(v) => setFilterProcesso(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[200px] shrink-0">
+              <SelectValue placeholder="Processo: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              {PROCESSOS.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Status</Label>
+          <Select value={filterStatus || ALL} onValueChange={(v) => setFilterStatus(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[140px] shrink-0">
+              <SelectValue placeholder="Status: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              <SelectItem value="COMPLETED">Sucesso</SelectItem>
+              <SelectItem value="FAILED">Falha</SelectItem>
+              <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
+              <SelectItem value="PENDING">Pendente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Base</Label>
+          <Select value={filterBase || ALL} onValueChange={(v) => setFilterBase(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[130px] shrink-0">
+              <SelectValue placeholder="Base: Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todas</SelectItem>
+              {bases.map((b) => (
+                <SelectItem key={b} value={b}>
+                  {b}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Competência</Label>
+          <Select value={filterCompetencia || ALL} onValueChange={(v) => setFilterCompetencia(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[170px] shrink-0">
+              <SelectValue placeholder="Competência: Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todas</SelectItem>
+              {competencias.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {(filterMotor || filterProcesso || filterStatus || filterBase || filterCompetencia) && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setFilterMotor('');
+              setFilterProcesso('');
+              setFilterStatus('');
+              setFilterBase('');
+              setFilterCompetencia('');
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
+      <div className="mb-8">
+        <TrackingKpiStrip kpis={trackingKpis} totalProcessos={processosFiltrados.length} />
+      </div>
+
+      <div className="mb-8">
+        <h5 className="mb-1 text-base font-semibold">Processos</h5>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
+        </p>
+        <div className="flex flex-col gap-2.5">
+          {[...processosFiltrados]
+            .sort((a, b) => {
+              const failA = tasksFiltradas.filter((t) => t.queue === a.stages[0]?.queue && t.status === 'FAILED').length;
+              const failB = tasksFiltradas.filter((t) => t.queue === b.stages[0]?.queue && t.status === 'FAILED').length;
+              return failB - failA;
+            })
+            .map((processo, idx) => (
+              <ProcessoAccordion
+                key={processo.id}
+                processo={processo}
+                tasks={tasksFiltradas}
+                view={view}
+                defaultOpen={idx === 0}
+              />
+            ))}
+          {processosFiltrados.length === 0 && (
+            <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+              Nenhum processo com os filtros atuais.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {view === 'interno' && (
+        <div className="mb-8">
+          <h5 className="mb-1 text-base font-semibold">Não conformidades</h5>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Falhas agrupadas por categoria — o que define se o caso vira debug do bot ou tratativa humana.
+          </p>
+          <NaoConformidades
+            tasks={tasksFiltradas}
+            queues={processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue))}
+          />
+        </div>
+      )}
+
+      <div className="mb-8">
+        <button
+          type="button"
+          onClick={() => setContratoOpen((prev) => !prev)}
+          className="mb-1 flex w-full items-center gap-1.5 text-left"
+        >
+          <ChevronRight className={cn('size-4 text-muted-foreground transition-transform', contratoOpen && 'rotate-90')} />
+          <h5 className="text-base font-semibold">Contrato de dados</h5>
+        </button>
+        <p className="mb-3 pl-5.5 text-xs text-muted-foreground">
+          O que o back-end precisa enviar por execução para o painel conseguir montar tudo acima.
+        </p>
+        {contratoOpen && <ContratoDados />}
+      </div>
+
+      <div className="mb-3">
+        <h5 className="text-base font-semibold">Amostragem de KPIs</h5>
+        <p className="text-xs text-muted-foreground">
+          Indicadores ilustrativos organizados por categoria — separados por aba para comparar o que faz sentido
+          expor.
+        </p>
+      </div>
+
+      <Tabs defaultValue={CATEGORY_ORDER[0]} className="mb-8">
+        <TabsList>
+          {CATEGORY_ORDER.map((category) => (
+            <TabsTrigger key={category} value={category}>
+              {CATEGORY_META[category].label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {CATEGORY_ORDER.map((category) => {
+          const meta = CATEGORY_META[category];
+          const items = KPI_CATALOG.filter((k) => k.category === category);
+
+          return (
+            <TabsContent key={category} value={category} className="mt-4">
+              <p className="mb-3 text-xs text-muted-foreground">{meta.description}</p>
+              <div className={`grid gap-3 ${KPI_GRID}`}>
+                {items.map((kpi) => (
+                  <KpiCard key={kpi.id} kpi={kpi} />
+                ))}
+              </div>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Tendência temporal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="protoGradSucesso" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--success-border)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--success-border)" stopOpacity={0.04} />
+                  </linearGradient>
+                  <linearGradient id="protoGradFalha" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                <RTooltip />
+                <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+                <Area
+                  type="monotone"
+                  dataKey="sucesso"
+                  name="Sucesso"
+                  stroke="var(--success-border)"
+                  fill="url(#protoGradSucesso)"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="falha"
+                  name="Falha"
+                  stroke="var(--destructive)"
+                  fill="url(#protoGradFalha)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Desfecho do período</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={DONUT_DATA}
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={55}
+                  outerRadius={92}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {DONUT_DATA.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RTooltip />
+                <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Volume por mês</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+              <RTooltip />
+              <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="sucesso" name="Sucesso" stackId="a" fill="var(--success-border)" radius={[0, 0, 0, 0]} maxBarSize={48} />
+              <Bar dataKey="falha" name="Falha" stackId="a" fill="var(--destructive)" radius={[4, 4, 0, 0]} maxBarSize={48} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </DashboardContent>
   );
 }

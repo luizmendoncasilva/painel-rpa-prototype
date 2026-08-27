@@ -1,4 +1,4 @@
-import type { KpiDef, Density, AccentVariant } from './kpi-catalog';
+import type { KpiDef } from './kpi-catalog';
 
 import { Info, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -20,36 +20,16 @@ const TREND_CLASS: Record<NonNullable<KpiDef['trend']>, string> = {
   neutral: 'text-muted-foreground',
 };
 
-const ACCENT_BAR_CLASS: Record<AccentVariant, string> = {
-  success: 'bg-[var(--success-border)]',
-  info: 'bg-[var(--info-border)]',
-  warning: 'bg-[var(--warning-border)]',
-  secondary: 'bg-[var(--color-neutral-400)]',
-  default: 'bg-foreground',
-};
-
 interface KpiCardProps {
   kpi: KpiDef;
-  density: Density;
-  accent: AccentVariant;
-  padding: 'sm' | 'md' | 'lg';
 }
 
-export function KpiCard({ kpi, density, accent, padding }: KpiCardProps) {
-  const compact = density === 'compact';
-
+export function KpiCard({ kpi }: KpiCardProps) {
   return (
-    <Card padding={padding} className="relative min-w-0 overflow-hidden">
-      <span className={cn('absolute inset-y-0 left-0 w-1', ACCENT_BAR_CLASS[accent])} />
-
-      <CardContent className="flex flex-col gap-1.5 pl-2">
+    <Card className="min-w-0">
+      <CardContent className="flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              'truncate font-semibold uppercase tracking-wide text-muted-foreground',
-              compact ? 'text-[10px]' : 'text-xs'
-            )}
-          >
+          <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {kpi.title}
           </span>
 
@@ -67,20 +47,12 @@ export function KpiCard({ kpi, density, accent, padding }: KpiCardProps) {
           </Tooltip>
         </div>
 
-        <span
-          className={cn(
-            'font-semibold tracking-tight tabular-nums text-foreground',
-            compact ? 'text-xl' : 'text-3xl'
-          )}
-        >
-          {kpi.value}
-        </span>
+        <span className="text-3xl font-semibold tracking-tight tabular-nums text-foreground">{kpi.value}</span>
 
         {kpi.delta && (
           <span
             className={cn(
-              'inline-flex items-center gap-1',
-              compact ? 'text-[11px]' : 'text-xs',
+              'inline-flex items-center gap-1 text-xs',
               kpi.trend ? TREND_CLASS[kpi.trend] : 'text-muted-foreground'
             )}
           >

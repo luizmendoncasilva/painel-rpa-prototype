@@ -14,6 +14,7 @@ import {
   Card,
   Badge,
   Input,
+  Label,
   Button,
   Select,
   Tooltip,
@@ -174,41 +175,50 @@ export function CatalogoView() {
           </Button>
       </div>
 
-      <div className="mb-6 mt-4 flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-[220px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou descrição..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div className="mb-6 mt-4 flex flex-wrap items-end gap-2.5">
+        <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Buscar</Label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Nome ou descrição..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
-        <Select value={filterMotor || ALL} onValueChange={(v) => setFilterMotor(v === ALL ? '' : v)}>
-          <SelectTrigger className="w-[140px] shrink-0">
-            <SelectValue placeholder="Motor: Todos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos</SelectItem>
-            <SelectItem value="Fiscal">Fiscal</SelectItem>
-            <SelectItem value="DP">DP</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Motor</Label>
+          <Select value={filterMotor || ALL} onValueChange={(v) => setFilterMotor(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[140px] shrink-0">
+              <SelectValue placeholder="Motor: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos</SelectItem>
+              <SelectItem value="Fiscal">Fiscal</SelectItem>
+              <SelectItem value="DP">DP</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={filterPraca || ALL} onValueChange={(v) => setFilterPraca(v === ALL ? '' : v)}>
-          <SelectTrigger className="w-[160px] shrink-0">
-            <SelectValue placeholder="Praça: Todas" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas</SelectItem>
-            {pracas.map((praca) => (
-              <SelectItem key={praca} value={praca}>
-                {praca}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-[11px] text-muted-foreground">Praça</Label>
+          <Select value={filterPraca || ALL} onValueChange={(v) => setFilterPraca(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-[160px] shrink-0">
+              <SelectValue placeholder="Praça: Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todas</SelectItem>
+              {pracas.map((praca) => (
+                <SelectItem key={praca} value={praca}>
+                  {praca}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="mb-6">

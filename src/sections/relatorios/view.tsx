@@ -16,6 +16,7 @@ import {
   Card,
   Empty,
   Input,
+  Label,
   Alert,
   Select,
   CardTitle,
@@ -339,45 +340,57 @@ export function RelatoriosView() {
 
       {/* Filtros */}
       <Card className="mb-6">
-        <CardContent className="flex flex-wrap items-center gap-4">
-          <Select value={filterMotor || ALL} onValueChange={(v) => handleMotorChange(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[130px] shrink-0">
-              <SelectValue placeholder="Motor: Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              <SelectItem value="Fiscal">Fiscal</SelectItem>
-              <SelectItem value="DP">DP</SelectItem>
-            </SelectContent>
-          </Select>
+        <CardContent className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Motor</Label>
+            <Select value={filterMotor || ALL} onValueChange={(v) => handleMotorChange(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[130px] shrink-0">
+                <SelectValue placeholder="Motor: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="Fiscal">Fiscal</SelectItem>
+                <SelectItem value="DP">DP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filterRpa || ALL} onValueChange={(v) => handleRpaChange(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[240px] shrink-0">
-              <SelectValue placeholder="RPA: Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              {availableRpas.map((r) => (
-                <SelectItem key={r.queue} value={r.queue}>{r.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">RPA</Label>
+            <Select value={filterRpa || ALL} onValueChange={(v) => handleRpaChange(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[240px] shrink-0">
+                <SelectValue placeholder="RPA: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                {availableRpas.map((r) => (
+                  <SelectItem key={r.queue} value={r.queue}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Input
-            type="date"
-            aria-label="De"
-            value={filterDateFrom}
-            onChange={(e) => { setFilterDateFrom(e.target.value); setReportData(undefined); }}
-            className="w-[152px] shrink-0"
-          />
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">De</Label>
+            <Input
+              type="date"
+              aria-label="De"
+              value={filterDateFrom}
+              onChange={(e) => { setFilterDateFrom(e.target.value); setReportData(undefined); }}
+              className="w-[152px] shrink-0"
+            />
+          </div>
 
-          <Input
-            type="date"
-            aria-label="Até"
-            value={filterDateTo}
-            onChange={(e) => { setFilterDateTo(e.target.value); setReportData(undefined); }}
-            className="w-[152px] shrink-0"
-          />
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Até</Label>
+            <Input
+              type="date"
+              aria-label="Até"
+              value={filterDateTo}
+              onChange={(e) => { setFilterDateTo(e.target.value); setReportData(undefined); }}
+              className="w-[152px] shrink-0"
+            />
+          </div>
 
           <LoadingButton
             variant="default"
