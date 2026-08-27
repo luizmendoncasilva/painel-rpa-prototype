@@ -1,8 +1,15 @@
+import { PROCESSOS } from 'src/assets/data/processos';
+
 // ----------------------------------------------------------------------
 // Catálogo de KPIs — dados ILUSTRATIVOS para prototipagem de layout.
 // Cada item representa um indicador que já é calculável com os dados
 // hoje expostos pela API (tasks, execution_logs, bots). Ver CLAUDE.md.
+// "Empresas elegíveis" e "Processos catalogados" são computados a partir
+// do catálogo de RPAs (src/assets/data/processos.ts).
 // ----------------------------------------------------------------------
+
+const TOTAL_EMPRESAS_ELEGIVEIS = PROCESSOS.reduce((sum, p) => sum + p.empresasElegiveis, 0);
+const TOTAL_PROCESSOS_MULTI_ETAPA = PROCESSOS.filter((p) => p.stages.length > 1).length;
 
 export type KpiCategory = 'volume' | 'confiabilidade' | 'eficiencia' | 'governanca';
 export type KpiTrend = 'up' | 'down' | 'neutral';
@@ -130,6 +137,15 @@ export const KPI_CATALOG: KpiDef[] = [
     delta: 'lojas concluídas',
     trend: 'up',
   },
+  {
+    id: 'sucesso-parcial',
+    category: 'confiabilidade',
+    title: 'Sucesso parcial em processos multi-etapa',
+    hint: 'Para processos formados por mais de um bot (ex.: emissão + entrega), mostra quantos casos tiveram uma etapa com sucesso e outra com falha — nem sucesso completo, nem falha total.',
+    value: `${TOTAL_PROCESSOS_MULTI_ETAPA}`,
+    delta: 'processos com etapas encadeadas',
+    trend: 'neutral',
+  },
 
   // Eficiência ----------------------------------------------------------
   {
@@ -205,6 +221,24 @@ export const KPI_CATALOG: KpiDef[] = [
     value: '3',
     delta: 'níveis em uso',
     trend: 'neutral',
+  },
+  {
+    id: 'processos-catalogados',
+    category: 'governanca',
+    title: 'Processos de negócio catalogados',
+    hint: 'Total de processos de RPA documentados no Catálogo — o glossário que explica o que cada robô faz, pedido para dar contexto a quem não acompanha o dia a dia técnico.',
+    value: `${PROCESSOS.length}`,
+    delta: 'no catálogo hoje',
+    trend: 'neutral',
+  },
+  {
+    id: 'empresas-elegiveis',
+    category: 'governanca',
+    title: 'Empresas elegíveis',
+    hint: 'Soma de empresas atendidas por todos os processos automatizados — mostra o alcance real do RPA, não só o volume de execuções.',
+    value: `${TOTAL_EMPRESAS_ELEGIVEIS}`,
+    delta: 'somando todos os processos',
+    trend: 'up',
   },
 ];
 

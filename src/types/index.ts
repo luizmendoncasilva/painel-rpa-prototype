@@ -94,6 +94,38 @@ export interface RpaConfigEntry {
 export type RpaConfigMap = Record<string, RpaConfigEntry>;
 
 // ---------------------------------------------------------------------------
+// Catálogo de RPAs (processos de negócio)
+// ---------------------------------------------------------------------------
+
+export interface ProcessStage {
+  queue: string;
+  label: string;
+}
+
+export interface ProcessoConfig {
+  id: string;
+  nome: string;
+  descricao: string;
+  motor: Motor;
+  praca: string;
+  responsavel: string;
+  empresasElegiveis: number;
+  stages: ProcessStage[];
+}
+
+export type ComboStatus = 'sucesso' | 'sucesso_parcial' | 'falha' | 'em_andamento' | 'pendente';
+
+export interface ProcessoCaseRow {
+  key: string;
+  empresa: string;
+  cnpj: string | null;
+  competencia: string | null;
+  stageStatus: Record<string, TaskStatus | null>;
+  comboStatus: ComboStatus;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Enriched Task (view layer)
 // ---------------------------------------------------------------------------
 

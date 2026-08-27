@@ -18,6 +18,7 @@ const ExecucoesPage = lazy(() => import('src/pages/dashboard/execucoes'));
 const BotsPage = lazy(() => import('src/pages/dashboard/bots'));
 const UsersPage = lazy(() => import('src/pages/dashboard/users'));
 const AnalyticsPage = lazy(() => import('src/pages/dashboard/analytics'));
+const CatalogoPage = lazy(() => import('src/pages/dashboard/catalogo'));
 
 // ----------------------------------------------------------------------
 
@@ -49,6 +50,7 @@ export const dashboardRoutes: RouteObject[] = [
       { path: 'bots', element: <BotsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
+      { path: 'catalogo', element: <CatalogoPage /> },
     ],
   },
 ];

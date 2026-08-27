@@ -48,5 +48,6 @@ export const paths = {
     bots: `${ROOTS.DASHBOARD}/bots`,
     users: `${ROOTS.DASHBOARD}/users`,
     analytics: `${ROOTS.DASHBOARD}/analytics`,
+    catalogo: `${ROOTS.DASHBOARD}/catalogo`,
   },
 };

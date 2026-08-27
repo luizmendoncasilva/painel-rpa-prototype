@@ -1,9 +1,10 @@
 import type { Task, TaskStatus, EnrichedTask } from 'src/types';
 
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { X, Search, ArrowUp, ArrowDown, RefreshCw, ChevronLeft, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { X, Search, ArrowUp, Download, ArrowDown, RefreshCw, ChevronLeft, ArrowUpDown, ChevronRight } from 'lucide-react';
 
 import { fDateTime } from 'src/utils/format-time';
+import { exportToCsv } from 'src/utils/export-csv';
 
 import axios, { endpoints } from 'src/lib/axios';
 import { RPA_CONFIG } from 'src/assets/data/rpa-config';
@@ -377,6 +378,25 @@ export function ExecucoesView() {
     setFilterDateTo('');
   };
 
+  const handleExport = () => {
+    exportToCsv(
+      'execucoes',
+      filtered.map((t) => ({
+        status: STATUS_LABEL_PT[t.status] ?? t.status,
+        motor: t._rpa.motor,
+        rpa: t._rpa.name,
+        empresa: t._empresa,
+        cnpj: t._cnpj ?? '',
+        competencia: t._competencia ?? '',
+        duracao: t._duracao ?? '',
+        data_hora: fDateTime(t.updated_at),
+        tentativas: `${t.attempt}/${t.max_attempts}`,
+        origem: t._origem,
+        task_id: t.task_id,
+      }))
+    );
+  };
+
   return (
     <DashboardContent maxWidth="xl">
       <h4 className="mb-6 text-2xl font-semibold">Execuções</h4>
@@ -503,6 +523,11 @@ export function ExecucoesView() {
               Limpar
             </Button>
           )}
+
+          <Button size="sm" variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
+            <Download className="size-4" />
+            Exportar CSV
+          </Button>
         </div>
 
         {/* Tabela */}
