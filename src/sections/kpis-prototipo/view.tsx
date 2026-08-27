@@ -21,8 +21,8 @@ import {
 } from 'recharts';
 
 import axios, { endpoints } from 'src/lib/axios';
-import { DashboardContent } from 'src/layouts/dashboard';
 import { generateMockTasks } from 'src/lib/mock-data';
+import { DashboardContent } from 'src/layouts/dashboard';
 import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
 import { TrackingKpiStrip } from 'src/components/tracking-kpis';
