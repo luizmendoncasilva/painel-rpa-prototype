@@ -9,8 +9,12 @@ import { pathOf, mockResponseFor, isEmptyGetResponse } from './mock-api';
 // ----------------------------------------------------------------------
 // Este é o repositório de demonstração pública (deploy Vercel), não o
 // painel real da BHub — por isso os dados fake valem sempre (dev e
-// produção), tanto quando a API real está fora do ar quanto quando ela
-// responde com lista vazia (ambiente novo, sem execuções ainda).
+// produção). Não há back-end real configurado aqui (CONFIG.serverUrl
+// fica vazio de propósito, pra não expor a API/credenciais reais da
+// BHub num repo público): toda chamada cai no próprio domínio estático
+// e o Vercel responde com o index.html da SPA (200, text/html) em vez
+// de JSON — por isso detectamos esse "fallback de SPA" e sempre
+// roteamos para os dados mockados, em qualquer método (GET/POST/...).
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({
@@ -21,15 +25,22 @@ const axiosInstance = axios.create({
   },
 });
 
+function looksLikeSpaFallback(response: AxiosResponse): boolean {
+  const contentType = String(response.headers?.['content-type'] ?? '');
+  if (contentType.includes('text/html')) return true;
+  return typeof response.data === 'string' && response.data.trim().startsWith('<!doctype');
+}
+
 axiosInstance.interceptors.response.use(
   (response) => {
+    const path = pathOf(response.config);
     const method = (response.config.method ?? 'get').toLowerCase();
-    if (method === 'get') {
-      const path = pathOf(response.config);
-      if (isEmptyGetResponse(path, response.data)) {
-        const mocked = mockResponseFor(response.config);
-        if (mocked) return mocked;
-      }
+    const shouldMock =
+      looksLikeSpaFallback(response) || (method === 'get' && isEmptyGetResponse(path, response.data));
+
+    if (shouldMock) {
+      const mocked = mockResponseFor(response.config);
+      if (mocked) return mocked;
     }
     return response;
   },

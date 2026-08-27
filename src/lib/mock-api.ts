@@ -33,10 +33,10 @@ export function pathOf(config: InternalAxiosRequestConfig): string {
 export function isEmptyGetResponse(path: string, data: unknown): boolean {
   if (path === '/tasks' || path === '/execution-logs') {
     const items = (data as { items?: unknown[] } | null)?.items;
-    return Array.isArray(items) && items.length === 0;
+    return !Array.isArray(items) || items.length === 0;
   }
   if (path === '/bots' || path === '/users') {
-    return Array.isArray(data) && data.length === 0;
+    return !Array.isArray(data) || data.length === 0;
   }
   return false;
 }
