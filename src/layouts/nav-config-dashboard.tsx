@@ -21,8 +21,8 @@ export const navData = [
     icon: BarChart3,
   },
   {
-    title: 'Analytics',
-    path: paths.dashboard.analytics,
+    title: 'Painel',
+    path: paths.dashboard.painel,
     icon: Sparkles,
   },
   {

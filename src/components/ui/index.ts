@@ -1,4 +1,5 @@
 export * from './card';
+export * from './tabs';
 export * from './icon';
 export * from './utils';
 export * from './badge';

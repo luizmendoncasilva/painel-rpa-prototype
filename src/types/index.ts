@@ -131,6 +131,7 @@ export interface ProcessoCaseRow {
   stageFailure: Record<string, StageFailure | null>;
   comboStatus: ComboStatus;
   updatedAt: string;
+  durationSeconds: number;
 }
 
 // ---------------------------------------------------------------------------

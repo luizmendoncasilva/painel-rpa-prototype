@@ -4,7 +4,7 @@ import { KpisPrototipoView } from 'src/sections/kpis-prototipo/view';
 
 // ----------------------------------------------------------------------
 
-const metadata = { title: `Analytics | ${CONFIG.appName}` };
+const metadata = { title: `Painel | ${CONFIG.appName}` };
 
 export default function Page() {
   return (

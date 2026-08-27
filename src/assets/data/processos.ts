@@ -149,6 +149,11 @@ export function buildProcessoCases(processo: ProcessoConfig, tasks: Task[]): Pro
       (groupTasks.find((t) => t.result?.razao_social)?.result?.razao_social as string | undefined) ??
       (cnpj !== 'sem-cnpj' ? cnpj : 'Empresa não identificada');
     const updatedAt = groupTasks.reduce((max, t) => (t.updated_at > max ? t.updated_at : max), groupTasks[0].updated_at);
+    const durationSeconds = groupTasks.reduce((sum, t) => {
+      if (t.status !== 'COMPLETED' && t.status !== 'FAILED') return sum;
+      const diff = (new Date(t.updated_at).getTime() - new Date(t.created_at).getTime()) / 1000;
+      return diff > 0 ? sum + diff : sum;
+    }, 0);
 
     rows.push({
       key,
@@ -160,6 +165,7 @@ export function buildProcessoCases(processo: ProcessoConfig, tasks: Task[]): Pro
       stageFailure,
       comboStatus: combineStatuses(processo.stages.map((s) => stageStatus[s.queue])),
       updatedAt,
+      durationSeconds,
     });
   }
 
@@ -181,3 +187,35 @@ export const COMBO_STATUS_VARIANT: Record<ComboStatus, 'success' | 'warning' | '
   em_andamento: 'warning',
   pendente: 'secondary',
 };
+
+// ----------------------------------------------------------------------
+// KPIs de acompanhamento — mesma leitura do modelo de referência trazido
+// pelos stakeholders (Processos monitorados / Êxitos / Falhas / Taxa de
+// êxito / Tempo de robô). Reutilizado no Catálogo e no Painel.
+// ----------------------------------------------------------------------
+
+export interface TrackingKpis {
+  processos: number;
+  ok: number;
+  fail: number;
+  rate: number;
+  horasRobo: number;
+}
+
+export function computeTrackingKpis(tasks: Task[], processos: ProcessoConfig[]): TrackingKpis {
+  const queues = processos.flatMap((p) => p.stages.map((s) => s.queue));
+  const relevant = tasks.filter((t) => queues.includes(t.queue));
+  const ok = relevant.filter((t) => t.status === 'COMPLETED').length;
+  const fail = relevant.filter((t) => t.status === 'FAILED').length;
+  const rate = ok + fail > 0 ? Math.round((ok / (ok + fail)) * 1000) / 10 : 0;
+
+  const totalSeconds = relevant.reduce((sum, t) => {
+    if (t.status !== 'COMPLETED' && t.status !== 'FAILED') return sum;
+    const diff = (new Date(t.updated_at).getTime() - new Date(t.created_at).getTime()) / 1000;
+    return diff > 0 ? sum + diff : sum;
+  }, 0);
+
+  const monitorados = processos.filter((p) => p.stages.some((s) => relevant.some((t) => t.queue === s.queue))).length;
+
+  return { processos: monitorados, ok, fail, rate, horasRobo: Math.round(totalSeconds / 3600) };
+}

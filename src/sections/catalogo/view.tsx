@@ -6,9 +6,10 @@ import { Eye, Search, Download, Workflow, Building2 } from 'lucide-react';
 import { exportToCsv } from 'src/utils/export-csv';
 
 import axios, { endpoints } from 'src/lib/axios';
-import { PROCESSOS } from 'src/assets/data/processos';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
+import { TrackingKpiStrip } from 'src/components/tracking-kpis';
 import {
   Card,
   Badge,
@@ -100,6 +101,7 @@ export function CatalogoView() {
 
   const totalEmpresas = useMemo(() => PROCESSOS.reduce((sum, p) => sum + p.empresasElegiveis, 0), []);
   const selectedProcesso = PROCESSOS.find((p) => p.id === selectedId) ?? null;
+  const globalKpis = useMemo(() => computeTrackingKpis(tasks, filtered), [tasks, filtered]);
 
   const handleExportAll = () => {
     exportToCsv(
@@ -207,6 +209,10 @@ export function CatalogoView() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="mb-6">
+        <TrackingKpiStrip kpis={globalKpis} totalProcessos={filtered.length} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

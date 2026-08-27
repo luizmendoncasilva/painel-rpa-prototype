@@ -1,7 +1,9 @@
+import type { Task } from 'src/types';
 import type { KpiCategory } from './kpi-catalog';
+import type { CatalogoViewMode } from 'src/sections/catalogo/view';
 
-import { useState } from 'react';
 import { LayoutGrid } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Bar,
   Pie,
@@ -18,23 +20,39 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
+import { TrackingKpiStrip } from 'src/components/tracking-kpis';
 import {
   cn,
   Card,
+  Tabs,
   Alert,
   Badge,
   Button,
+  Select,
+  TabsList,
   CardTitle,
+  SelectItem,
   IconButton,
   CardHeader,
   AlertTitle,
   CardContent,
+  TabsTrigger,
+  TabsContent,
+  SelectValue,
+  SelectContent,
+  SelectTrigger,
   AlertDescription,
 } from 'src/components/ui';
 
+import { NaoConformidades } from 'src/sections/catalogo/nao-conformidades';
+
 import { KpiCard } from './kpi-card';
+import { ContratoDados } from './contrato-dados';
+import { ProcessoAccordion } from './processo-accordion';
 import { KPI_CATALOG, CATEGORY_META, LAYOUT_PRESETS } from './kpi-catalog';
 
 // ----------------------------------------------------------------------
@@ -57,13 +75,86 @@ const VOLUME_DATA = [
   { label: 'jun', sucesso: 248, falha: 38 },
 ];
 
+const ALL = '__all__';
+
+function extractCompetencia(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  return (payload.competencia as string) ?? null;
+}
+
+function extractBase(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  return (payload.base as string) ?? null;
+}
+
 // ----------------------------------------------------------------------
 
 export function KpisPrototipoView() {
   const [layoutId, setLayoutId] = useState(1);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filterMotor, setFilterMotor] = useState('');
+  const [filterProcesso, setFilterProcesso] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterBase, setFilterBase] = useState('');
+  const [filterCompetencia, setFilterCompetencia] = useState('');
+  const [view, setView] = useState<CatalogoViewMode>('operacao');
+
   const layout = LAYOUT_PRESETS.find((p) => p.id === layoutId) ?? LAYOUT_PRESETS[0];
   const compact = layout.density === 'compact';
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
+        if (active) setTasks((res.data.items as Task[]) ?? []);
+      } catch {
+        // silencioso — a faixa de KPIs de acompanhamento cai para 0 sem dados
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const bases = useMemo(
+    () => [...new Set(tasks.map((t) => extractBase(t.payload)).filter((b): b is string => Boolean(b)))].sort(),
+    [tasks]
+  );
+  const competencias = useMemo(
+    () =>
+      [...new Set(tasks.map((t) => extractCompetencia(t.payload)).filter((c): c is string => Boolean(c)))].sort(
+        (a, b) => b.localeCompare(a)
+      ),
+    [tasks]
+  );
+
+  const processosFiltrados = useMemo(
+    () =>
+      PROCESSOS.filter((p) => {
+        if (filterMotor && p.motor !== filterMotor) return false;
+        if (filterProcesso && p.id !== filterProcesso) return false;
+        return true;
+      }),
+    [filterMotor, filterProcesso]
+  );
+
+  const tasksFiltradas = useMemo(() => {
+    const queues = processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue));
+    return tasks.filter((t) => {
+      if (!queues.includes(t.queue)) return false;
+      if (filterStatus && t.status !== filterStatus) return false;
+      if (filterBase && extractBase(t.payload) !== filterBase) return false;
+      if (filterCompetencia && extractCompetencia(t.payload) !== filterCompetencia) return false;
+      return true;
+    });
+  }, [tasks, processosFiltrados, filterStatus, filterBase, filterCompetencia]);
+
+  const trackingKpis = useMemo(
+    () => computeTrackingKpis(tasksFiltradas, processosFiltrados),
+    [tasksFiltradas, processosFiltrados]
+  );
 
   return (
     <div className={cn(layout.dark && 'dark')}>
@@ -71,49 +162,228 @@ export function KpisPrototipoView() {
         <DashboardContent maxWidth="xl">
           <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h4 className="text-2xl font-semibold">Protótipo de KPIs</h4>
+              <h4 className="text-2xl font-semibold">Painel</h4>
               <p className="text-sm text-muted-foreground">
-                Amostragem de indicadores para stakeholders — todos calculáveis com os dados que a API já expõe.
+                Acompanhamento dos processos + amostragem de indicadores para stakeholders.
               </p>
             </div>
-            <Badge variant="outline" className="gap-1.5">
-              Estilo {layout.id} · {layout.name}
-            </Badge>
+
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
+                  <Button
+                    size="sm"
+                    variant={view === 'operacao' ? 'default' : 'ghost'}
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setView('operacao')}
+                  >
+                    Operação
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={view === 'interno' ? 'default' : 'ghost'}
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setView('interno')}
+                  >
+                    Interno · detalhe
+                  </Button>
+                </div>
+                <Badge variant="outline" className="gap-1.5">
+                  Estilo {layout.id} · {layout.name}
+                </Badge>
+              </div>
+              <span className="text-[11px] text-muted-foreground">Mesma base, dois níveis de detalhe</span>
+            </div>
           </div>
 
           <Alert variant="warning" className="mt-4 mb-6">
             <AlertTitle>Dados ilustrativos</AlertTitle>
             <AlertDescription>
-              Os valores desta tela são fictícios, apenas para validar layout e conteúdo dos KPIs — não refletem
-              execuções reais.
+              Os KPIs de amostragem abaixo são fictícios, apenas para validar layout e conteúdo — não refletem
+              execuções reais. A faixa de acompanhamento no topo usa os dados carregados de fato.
             </AlertDescription>
           </Alert>
 
-          {CATEGORY_ORDER.map((category) => {
-            const meta = CATEGORY_META[category];
-            const items = KPI_CATALOG.filter((k) => k.category === category);
+          <div className="mb-6 flex flex-wrap items-center gap-2.5">
+            <Select value={filterMotor || ALL} onValueChange={(v) => setFilterMotor(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[130px] shrink-0">
+                <SelectValue placeholder="Motor: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="Fiscal">Fiscal</SelectItem>
+                <SelectItem value="DP">DP</SelectItem>
+              </SelectContent>
+            </Select>
 
-            return (
-              <section key={category} className={cn(compact ? 'mb-6' : 'mb-8')}>
-                <div className="mb-3 flex items-baseline gap-2">
-                  <h5 className={cn('font-semibold', compact ? 'text-sm' : 'text-base')}>{meta.label}</h5>
-                  <span className="text-xs text-muted-foreground">{meta.description}</span>
-                </div>
+            <Select value={filterProcesso || ALL} onValueChange={(v) => setFilterProcesso(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[200px] shrink-0">
+                <SelectValue placeholder="Processo: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                {PROCESSOS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                <div className={cn('grid gap-3', layout.gridCols)}>
-                  {items.map((kpi) => (
-                    <KpiCard
-                      key={kpi.id}
-                      kpi={kpi}
-                      density={layout.density}
-                      accent={layout.accent}
-                      padding={layout.cardPadding}
-                    />
-                  ))}
+            <Select value={filterStatus || ALL} onValueChange={(v) => setFilterStatus(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[140px] shrink-0">
+                <SelectValue placeholder="Status: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="COMPLETED">Sucesso</SelectItem>
+                <SelectItem value="FAILED">Falha</SelectItem>
+                <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
+                <SelectItem value="PENDING">Pendente</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterBase || ALL} onValueChange={(v) => setFilterBase(v === ALL ? '' : v)}>
+              <SelectTrigger className="w-[130px] shrink-0">
+                <SelectValue placeholder="Base: Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todas</SelectItem>
+                {bases.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filterCompetencia || ALL}
+              onValueChange={(v) => setFilterCompetencia(v === ALL ? '' : v)}
+            >
+              <SelectTrigger className="w-[170px] shrink-0">
+                <SelectValue placeholder="Competência: Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todas</SelectItem>
+                {competencias.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {(filterMotor || filterProcesso || filterStatus || filterBase || filterCompetencia) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setFilterMotor('');
+                  setFilterProcesso('');
+                  setFilterStatus('');
+                  setFilterBase('');
+                  setFilterCompetencia('');
+                }}
+              >
+                Limpar filtros
+              </Button>
+            )}
+          </div>
+
+          <div className="mb-8">
+            <TrackingKpiStrip kpis={trackingKpis} totalProcessos={processosFiltrados.length} />
+          </div>
+
+          <div className="mb-8">
+            <h5 className="mb-1 text-base font-semibold">Processos</h5>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {[...processosFiltrados]
+                .sort((a, b) => {
+                  const failA = tasksFiltradas.filter((t) => t.queue === a.stages[0]?.queue && t.status === 'FAILED').length;
+                  const failB = tasksFiltradas.filter((t) => t.queue === b.stages[0]?.queue && t.status === 'FAILED').length;
+                  return failB - failA;
+                })
+                .map((processo, idx) => (
+                  <ProcessoAccordion
+                    key={processo.id}
+                    processo={processo}
+                    tasks={tasksFiltradas}
+                    view={view}
+                    defaultOpen={idx === 0}
+                  />
+                ))}
+              {processosFiltrados.length === 0 && (
+                <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+                  Nenhum processo com os filtros atuais.
                 </div>
-              </section>
-            );
-          })}
+              )}
+            </div>
+          </div>
+
+          {view === 'interno' && (
+            <div className="mb-8">
+              <h5 className="mb-1 text-base font-semibold">Não conformidades</h5>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Falhas agrupadas por categoria — o que define se o caso vira debug do bot ou tratativa humana.
+              </p>
+              <NaoConformidades
+                tasks={tasksFiltradas}
+                queues={processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue))}
+              />
+            </div>
+          )}
+
+          <div className="mb-8">
+            <h5 className="mb-1 text-base font-semibold">Contrato de dados</h5>
+            <p className="mb-3 text-xs text-muted-foreground">
+              O que o back-end precisa enviar por execução para o painel conseguir montar tudo acima.
+            </p>
+            <ContratoDados />
+          </div>
+
+          <div className="mb-3">
+            <h5 className="text-base font-semibold">Amostragem de KPIs</h5>
+            <p className="text-xs text-muted-foreground">
+              Indicadores ilustrativos organizados por categoria — separe por aba para comparar o que faz sentido
+              expor.
+            </p>
+          </div>
+
+          <Tabs defaultValue={CATEGORY_ORDER[0]} className="mb-8">
+            <TabsList>
+              {CATEGORY_ORDER.map((category) => (
+                <TabsTrigger key={category} value={category}>
+                  {CATEGORY_META[category].label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {CATEGORY_ORDER.map((category) => {
+              const meta = CATEGORY_META[category];
+              const items = KPI_CATALOG.filter((k) => k.category === category);
+
+              return (
+                <TabsContent key={category} value={category} className="mt-4">
+                  <p className="mb-3 text-xs text-muted-foreground">{meta.description}</p>
+                  <div className={cn('grid gap-3', layout.gridCols)}>
+                    {items.map((kpi) => (
+                      <KpiCard
+                        key={kpi.id}
+                        kpi={kpi}
+                        density={layout.density}
+                        accent={layout.accent}
+                        padding={layout.cardPadding}
+                      />
+                    ))}
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr]">
             <Card padding={layout.cardPadding}>
