@@ -4,8 +4,13 @@ import axios from 'axios';
 
 import { CONFIG } from 'src/global-config';
 
-import { mockResponseFor } from './mock-api';
+import { pathOf, mockResponseFor, isEmptyGetResponse } from './mock-api';
 
+// ----------------------------------------------------------------------
+// Este é o repositório de demonstração pública (deploy Vercel), não o
+// painel real da BHub — por isso os dados fake valem sempre (dev e
+// produção), tanto quando a API real está fora do ar quanto quando ela
+// responde com lista vazia (ambiente novo, sem execuções ainda).
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({
@@ -17,11 +22,20 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = (response.config.method ?? 'get').toLowerCase();
+    if (method === 'get') {
+      const path = pathOf(response.config);
+      if (isEmptyGetResponse(path, response.data)) {
+        const mocked = mockResponseFor(response.config);
+        if (mocked) return mocked;
+      }
+    }
+    return response;
+  },
   (error: AxiosError) => {
-    // Em dev, se a API real não responder (sem back-end local), usamos dados
-    // fake só para conseguir visualizar as telas. Nunca roda em produção.
-    if (import.meta.env.DEV && !error.response) {
+    // API real inacessível — cai para os mesmos dados fake em vez de zerar a tela.
+    if (!error.response) {
       const mocked = mockResponseFor(error.config as InternalAxiosRequestConfig);
       if (mocked) {
         return Promise.resolve(mocked as AxiosResponse);
