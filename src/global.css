@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Faz o Tailwind escanear as classes usadas dentro do pacote compilado do
+   design system (ele não inclui um CSS pré-compilado com os utilitários). */
+@source '../node_modules/@bhubai/bhub-design-system/dist/**/*.js';
+
+@import '@bhubai/bhub-design-system/dist/styles.css';
+
+/** **************************************
+* Fonts: app (BHub Design System usa Inter)
+*************************************** */
+@import '@fontsource-variable/inter';
+
+/** **************************************
+* Base do design system — sem isso, `border`/`outline` (Card, Table, Input,
+* Dialog...) caem no preto padrão do Tailwind em vez dos tokens do BHub.
+*************************************** */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/** **************************************
+* Baseline
+*************************************** */
+html {
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+body,
+#root,
+#root__layout {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 100%;
+  flex-direction: column;
+}
+img {
+  max-width: 100%;
+  vertical-align: middle;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: none;
+}
+input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
