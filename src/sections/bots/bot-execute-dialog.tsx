@@ -1,6 +1,7 @@
 import type { Bot } from 'src/types';
 
 import { useState } from 'react';
+
 import {
   Dialog,
   Button,
@@ -10,7 +11,7 @@ import {
   DialogContent,
   LoadingButton,
   DialogDescription,
-} from '@bhubai/bhub-design-system';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +33,7 @@ export function BotExecuteDialog({ open, bot, onClose, onConfirm }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md" style={{ maxWidth: '28rem' }}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Executar Bot</DialogTitle>
           <DialogDescription>

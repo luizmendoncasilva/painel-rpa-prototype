@@ -3,6 +3,10 @@ import type { Bot, BotFormData } from 'src/types';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Play, Pencil, Search, Trash2, ArrowUp, FileText, ArrowDown, ArrowUpDown } from 'lucide-react';
+
+import axios, { endpoints } from 'src/lib/axios';
+import { DashboardContent } from 'src/layouts/dashboard';
+
 import {
   Card,
   Table,
@@ -19,10 +23,7 @@ import {
   TableHeader,
   TooltipContent,
   TooltipTrigger,
-} from '@bhubai/bhub-design-system';
-
-import axios, { endpoints } from 'src/lib/axios';
-import { DashboardContent } from 'src/layouts/dashboard';
+} from 'src/components/ui';
 
 import { BotFormDialog } from './bot-form-dialog';
 import { BotLogsDialog } from './bot-logs-dialog';

@@ -3,19 +3,6 @@ import type { KpiCategory } from './kpi-catalog';
 import { useState } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import {
-  cn,
-  Card,
-  Alert,
-  Badge,
-  Button,
-  CardTitle,
-  IconButton,
-  CardHeader,
-  AlertTitle,
-  CardContent,
-  AlertDescription,
-} from '@bhubai/bhub-design-system';
-import {
   Bar,
   Pie,
   Cell,
@@ -32,6 +19,20 @@ import {
 } from 'recharts';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+
+import {
+  cn,
+  Card,
+  Alert,
+  Badge,
+  Button,
+  CardTitle,
+  IconButton,
+  CardHeader,
+  AlertTitle,
+  CardContent,
+  AlertDescription,
+} from 'src/components/ui';
 
 import { KpiCard } from './kpi-card';
 import { KPI_CATALOG, CATEGORY_META, LAYOUT_PRESETS } from './kpi-catalog';

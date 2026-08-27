@@ -3,6 +3,9 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router';
+
+import { CONFIG } from 'src/global-config';
+
 import {
   Card,
   Alert,
@@ -14,9 +17,7 @@ import {
   AlertTitle,
   CardContent,
   AlertDescription,
-} from '@bhubai/bhub-design-system';
-
-import { CONFIG } from 'src/global-config';
+} from 'src/components/ui';
 
 import { useAuthContext } from 'src/auth/context';
 

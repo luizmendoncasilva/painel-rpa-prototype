@@ -2,6 +2,13 @@ import type { Task, TaskStatus, EnrichedTask } from 'src/types';
 
 import { useRef, useMemo, useState, useEffect } from 'react';
 import { X, Search, ArrowUp, ArrowDown, RefreshCw, ChevronLeft, ArrowUpDown, ChevronRight } from 'lucide-react';
+
+import { fDateTime } from 'src/utils/format-time';
+
+import axios, { endpoints } from 'src/lib/axios';
+import { RPA_CONFIG } from 'src/assets/data/rpa-config';
+import { DashboardContent } from 'src/layouts/dashboard';
+
 import {
   cn,
   Card,
@@ -28,13 +35,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   AlertDescription,
-} from '@bhubai/bhub-design-system';
-
-import { fDateTime } from 'src/utils/format-time';
-
-import axios, { endpoints } from 'src/lib/axios';
-import { RPA_CONFIG } from 'src/assets/data/rpa-config';
-import { DashboardContent } from 'src/layouts/dashboard';
+} from 'src/components/ui';
 
 import { ExecutionDetailDialog } from './execution-detail-dialog';
 

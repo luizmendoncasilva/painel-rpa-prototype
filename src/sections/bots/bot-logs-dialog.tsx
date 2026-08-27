@@ -2,6 +2,9 @@ import type { Bot } from 'src/types';
 
 import { useState, useEffect, useCallback } from 'react';
 import { X, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+
+import axios, { endpoints } from 'src/lib/axios';
+
 import {
   Badge,
   Table,
@@ -20,9 +23,7 @@ import {
   DialogContent,
   TooltipContent,
   TooltipTrigger,
-} from '@bhubai/bhub-design-system';
-
-import axios, { endpoints } from 'src/lib/axios';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -148,7 +149,7 @@ export function BotLogsDialog({ open, bot, onClose }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="gap-0 p-0 sm:max-w-4xl" style={{ maxWidth: '56rem' }}>
+        <DialogContent className="gap-0 p-0 sm:max-w-4xl">
           <DialogTitle className="sr-only">Logs — {bot?.name}</DialogTitle>
 
           <div className="flex items-center justify-between px-6 pt-6 pb-1">
@@ -294,10 +295,7 @@ export function BotLogsDialog({ open, bot, onClose }: Props) {
 
       {/* Detail modal */}
       <Dialog open={Boolean(detailLog)} onOpenChange={(v) => !v && setDetailLog(null)}>
-        <DialogContent
-          className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
-          style={{ maxWidth: '42rem' }}
-        >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Log Detalhado</DialogTitle>
           </DialogHeader>

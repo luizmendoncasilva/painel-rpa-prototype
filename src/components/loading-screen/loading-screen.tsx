@@ -1,4 +1,4 @@
-import { Spinner } from '@bhubai/bhub-design-system';
+import { Spinner } from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 

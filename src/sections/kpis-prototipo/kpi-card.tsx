@@ -1,6 +1,7 @@
 import type { KpiDef, Density, AccentVariant } from './kpi-catalog';
 
 import { Info, ArrowUp, ArrowDown } from 'lucide-react';
+
 import {
   cn,
   Card,
@@ -9,7 +10,7 @@ import {
   CardContent,
   TooltipContent,
   TooltipTrigger,
-} from '@bhubai/bhub-design-system';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 

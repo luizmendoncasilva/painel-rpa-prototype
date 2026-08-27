@@ -1,8 +1,8 @@
-import { cn } from '@bhubai/bhub-design-system';
-
 import { RouterLink } from 'src/routes/components';
 
 import { CONFIG } from 'src/global-config';
+
+import { cn } from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 

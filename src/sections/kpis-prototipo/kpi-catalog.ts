@@ -210,7 +210,7 @@ export const KPI_CATALOG: KpiDef[] = [
 
 // ----------------------------------------------------------------------
 // Presets de layout — todos construídos só com tokens e componentes do
-// @bhubai/bhub-design-system (Card, Badge, Popover...). "dark" alterna o
+// src/components/ui (Card, Badge, Popover...). "dark" alterna o
 // tema nativo do DS; densidade/cor mudam classes utilitárias e variantes.
 // ----------------------------------------------------------------------
 

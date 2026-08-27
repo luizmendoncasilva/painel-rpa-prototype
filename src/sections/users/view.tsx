@@ -7,6 +7,10 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect, useCallback } from 'react';
+
+import axios, { endpoints } from 'src/lib/axios';
+import { DashboardContent } from 'src/layouts/dashboard';
+
 import {
   Card,
   Badge,
@@ -23,10 +27,7 @@ import {
   TableHeader,
   TooltipContent,
   TooltipTrigger,
-} from '@bhubai/bhub-design-system';
-
-import axios, { endpoints } from 'src/lib/axios';
-import { DashboardContent } from 'src/layouts/dashboard';
+} from 'src/components/ui';
 
 import { useAuthContext } from 'src/auth/context';
 

@@ -2,6 +2,7 @@ import type { Bot, BotLoja, BotFormData } from 'src/types';
 
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+
 import {
   Badge,
   Input,
@@ -19,7 +20,7 @@ import {
   SelectContent,
   SelectTrigger,
   LoadingButton,
-} from '@bhubai/bhub-design-system';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -133,7 +134,7 @@ export function BotFormDialog({ open, bot, onClose, onSave }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" style={{ maxWidth: '48rem' }}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{bot ? 'Editar Bot' : 'Novo Bot'}</DialogTitle>
         </DialogHeader>

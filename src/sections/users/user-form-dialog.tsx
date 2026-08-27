@@ -2,6 +2,7 @@ import type { User, UserFormData } from 'src/types';
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
+
 import {
   Input,
   Label,
@@ -13,7 +14,7 @@ import {
   DialogHeader,
   DialogContent,
   LoadingButton,
-} from '@bhubai/bhub-design-system';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ export function UserFormDialog({ open, user, onClose, onSave }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="sm:max-w-sm" style={{ maxWidth: '24rem' }}>
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
         </DialogHeader>

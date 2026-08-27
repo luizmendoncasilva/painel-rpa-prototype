@@ -1,5 +1,4 @@
-import type { User, Session } from '@supabase/supabase-js';
-import type { AuthContextValue } from 'src/types';
+import type { AppUser, AppSession, AuthContextValue } from 'src/types';
 
 import { useState, useContext, useCallback, createContext } from 'react';
 
@@ -13,33 +12,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const SESSION_KEY = 'rpas-dashboard:session';
 const DEMO_PASSWORD = '123456';
 
-function readSession(): Session | null {
+function readSession(): AppSession | null {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
+    return raw ? (JSON.parse(raw) as AppSession) : null;
   } catch {
     return null;
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(readSession);
-  const [user, setUser] = useState<User | null>(session?.user ?? null);
+  const [session, setSession] = useState<AppSession | null>(readSession);
+  const [user, setUser] = useState<AppUser | null>(session?.user ?? null);
 
   const signIn = useCallback(async ({ email, password }: { email: string; password: string }) => {
     if (password !== DEMO_PASSWORD) {
       throw new Error(`Credenciais inválidas. Use a senha "${DEMO_PASSWORD}".`);
     }
 
-    const demoUser = {
-      id: 'demo-user',
-      email,
-      app_metadata: {},
-      user_metadata: {},
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-    } as User;
-    const demoSession = { access_token: 'demo', refresh_token: 'demo', user: demoUser } as Session;
+    const demoUser: AppUser = { id: 'demo-user', email };
+    const demoSession: AppSession = { user: demoUser };
 
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(demoSession));
     setUser(demoUser);

@@ -25,19 +25,21 @@
   },
   "packageManager": "yarn@1.22.22",
   "dependencies": {
-    "@bhubai/bhub-design-system": "file:vendor/bhubai-bhub-design-system-1.4.1.tgz",
     "@fontsource-variable/inter": "^5.2.8",
-    "@supabase/supabase-js": "^2.105.0",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.16.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
     "lucide-react": "^1.33.0",
     "nprogress": "^0.2.0",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router": "^8.0.0",
     "recharts": "^3.8.1",
     "sonner": "^2.0.8",
+    "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

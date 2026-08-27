@@ -150,11 +150,18 @@ export interface ReportData {
 // Auth context
 // ---------------------------------------------------------------------------
 
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+export interface AppUser {
+  id: string;
+  email: string;
+}
+
+export interface AppSession {
+  user: AppUser;
+}
 
 export interface AuthContextValue {
-  user: SupabaseUser | null;
-  session: Session | null | undefined;
+  user: AppUser | null;
+  session: AppSession | null;
   loading: boolean;
   signIn: (credentials: { email: string; password: string }) => Promise<void>;
   signOut: () => Promise<void>;

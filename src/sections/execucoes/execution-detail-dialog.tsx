@@ -1,16 +1,16 @@
 import type { TaskStatus, EnrichedTask } from 'src/types';
 
+import { fDateTime } from 'src/utils/format-time';
+
+import { RPA_CONFIG } from 'src/assets/data/rpa-config';
+
 import {
   Badge,
   Dialog,
   DialogTitle,
   DialogHeader,
   DialogContent,
-} from '@bhubai/bhub-design-system';
-
-import { fDateTime } from 'src/utils/format-time';
-
-import { RPA_CONFIG } from 'src/assets/data/rpa-config';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -103,10 +103,7 @@ export function ExecutionDetailDialog({ task, onClose }: Props) {
 
   return (
     <Dialog open={Boolean(task)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
-        style={{ maxWidth: '42rem' }}
-      >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[11px]">

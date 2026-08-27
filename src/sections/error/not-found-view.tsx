@@ -1,8 +1,8 @@
-import { Button } from '@bhubai/bhub-design-system';
-
 import { RouterLink } from 'src/routes/components';
 
 import { SimpleLayout } from 'src/layouts/simple';
+
+import { Button } from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 

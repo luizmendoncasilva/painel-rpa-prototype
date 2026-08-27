@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 
 import { LogOut } from 'lucide-react';
+
+import { usePathname } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
+
+import { Logo } from 'src/components/logo';
 import {
   Sidebar,
   Tooltip,
@@ -16,12 +21,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarMenuButton,
-} from '@bhubai/bhub-design-system';
-
-import { usePathname } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
-
-import { Logo } from 'src/components/logo';
+} from 'src/components/ui';
 
 import { useAuthContext } from 'src/auth/context';
 

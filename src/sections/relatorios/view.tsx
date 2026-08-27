@@ -7,6 +7,11 @@ import {
   BarChart, PieChart, AreaChart, LabelList,
   CartesianGrid, ResponsiveContainer,
 } from 'recharts';
+
+import axios, { endpoints } from 'src/lib/axios';
+import { RPA_CONFIG } from 'src/assets/data/rpa-config';
+import { DashboardContent } from 'src/layouts/dashboard';
+
 import {
   Card,
   Empty,
@@ -23,11 +28,7 @@ import {
   SelectTrigger,
   LoadingButton,
   AlertDescription,
-} from '@bhubai/bhub-design-system';
-
-import axios, { endpoints } from 'src/lib/axios';
-import { RPA_CONFIG } from 'src/assets/data/rpa-config';
-import { DashboardContent } from 'src/layouts/dashboard';
+} from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
@@ -367,7 +368,7 @@ export function RelatoriosView() {
             aria-label="De"
             value={filterDateFrom}
             onChange={(e) => { setFilterDateFrom(e.target.value); setReportData(undefined); }}
-            className="min-w-[152px]"
+            className="w-[152px] shrink-0"
           />
 
           <Input
@@ -375,7 +376,7 @@ export function RelatoriosView() {
             aria-label="Até"
             value={filterDateTo}
             onChange={(e) => { setFilterDateTo(e.target.value); setReportData(undefined); }}
-            className="min-w-[152px]"
+            className="w-[152px] shrink-0"
           />
 
           <LoadingButton

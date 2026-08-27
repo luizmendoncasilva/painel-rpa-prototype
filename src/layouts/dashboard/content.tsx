@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { cn } from '@bhubai/bhub-design-system';
+import { cn } from 'src/components/ui';
 
 // ----------------------------------------------------------------------
 
