@@ -106,11 +106,11 @@ export function KpisPrototipoView() {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
         const items = (res.data.items as Task[]) ?? [];
-        // Em dev, se a API real não tem tasks ainda, preenche com dados fake só para demonstrar o layout
-        if (active) setTasks(items.length > 0 || !import.meta.env.DEV ? items : generateMockTasks());
+        // Protótipo de demonstração: se a API real não tem tasks ainda, preenche com dados fake
+        if (active) setTasks(items.length > 0 ? items : generateMockTasks());
       } catch {
-        // silencioso em produção; em dev preenche com dados fake em vez de zerar tudo
-        if (active) setTasks(import.meta.env.DEV ? generateMockTasks() : []);
+        // API inacessível — preenche com dados fake em vez de zerar tudo
+        if (active) setTasks(generateMockTasks());
       }
     })();
     return () => {
