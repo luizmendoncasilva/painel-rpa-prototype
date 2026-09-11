@@ -20,6 +20,7 @@ const UsersPage = lazy(() => import('src/pages/dashboard/users'));
 const PainelPage = lazy(() => import('src/pages/dashboard/painel'));
 const CatalogoPage = lazy(() => import('src/pages/dashboard/catalogo'));
 const ProcessosPage = lazy(() => import('src/pages/dashboard/processos'));
+const EspecificacaoPage = lazy(() => import('src/pages/dashboard/especificacao'));
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +54,7 @@ export const dashboardRoutes: RouteObject[] = [
       { path: 'painel', element: <PainelPage /> },
       { path: 'catalogo', element: <CatalogoPage /> },
       { path: 'processos', element: <ProcessosPage /> },
+      { path: 'especificacao', element: <EspecificacaoPage /> },
     ],
   },
 ];

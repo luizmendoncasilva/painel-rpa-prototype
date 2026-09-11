@@ -1,15 +1,17 @@
 import type { Task } from 'src/types';
+import type { ViewMode } from 'src/hooks/use-view-mode';
 
 import { useMemo, useState, useEffect } from 'react';
 import { Eye, Search, Download, Workflow } from 'lucide-react';
 
+import { useViewMode } from 'src/hooks/use-view-mode';
+
 import { exportToCsv } from 'src/utils/export-csv';
 
 import axios, { endpoints } from 'src/lib/axios';
+import { PROCESSOS } from 'src/assets/data/processos';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
-import { TrackingKpiStrip } from 'src/components/tracking-kpis';
 import {
   Card,
   Badge,
@@ -29,49 +31,28 @@ import {
   TooltipTrigger,
 } from 'src/components/ui';
 
-import { NaoConformidades } from './nao-conformidades';
 import { ProcessoDetailDialog } from './processo-detail-dialog';
 
 // ----------------------------------------------------------------------
+// Catálogo é a tela de REFERÊNCIA (o que cada processo é, quem compõe,
+// quantas empresas atende) — não de monitoramento. O acompanhamento
+// operacional (êxitos/falhas, não conformidades, KPIs de execução) fica
+// no Painel e no dialog "Detalhar" de cada processo, para não duplicar
+// o mesmo dado agregado em dois lugares com leituras ligeiramente
+// diferentes.
+// ----------------------------------------------------------------------
 
-export type CatalogoViewMode = 'operacao' | 'interno';
+export type CatalogoViewMode = ViewMode;
 
 const ALL = '__all__';
 
-interface ProcessoCounts {
-  ok: number;
-  fail: number;
-  pending: number;
-  total: number;
-  rate: number | null;
-}
-
-function computeCounts(tasks: Task[], queues: string[]): ProcessoCounts {
-  const relevant = tasks.filter((t) => queues.includes(t.queue));
-  const ok = relevant.filter((t) => t.status === 'COMPLETED').length;
-  const fail = relevant.filter((t) => t.status === 'FAILED').length;
-  const pending = relevant.filter((t) => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
-  const rate = ok + fail > 0 ? Math.round((ok / (ok + fail)) * 100) : null;
-  return { ok, fail, pending, total: relevant.length, rate };
-}
-
-function rateColorClass(rate: number | null) {
-  if (rate === null) return 'text-muted-foreground';
-  if (rate >= 80) return 'text-[var(--success-text)]';
-  if (rate >= 60) return 'text-[var(--warning-text)]';
-  return 'text-destructive';
-}
-
-// ----------------------------------------------------------------------
-
 export function CatalogoView() {
+  const { view } = useViewMode();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterMotor, setFilterMotor] = useState('');
   const [filterPraca, setFilterPraca] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [view, setView] = useState<CatalogoViewMode>('operacao');
 
   useEffect(() => {
     let active = true;
@@ -79,8 +60,8 @@ export function CatalogoView() {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
         if (active) setTasks((res.data.items as Task[]) ?? []);
-      } finally {
-        if (active) setLoading(false);
+      } catch {
+        // silencioso — a lista de processos é dado estático e não depende disso
       }
     })();
     return () => {
@@ -101,64 +82,34 @@ export function CatalogoView() {
   }, [search, filterMotor, filterPraca]);
 
   const selectedProcesso = PROCESSOS.find((p) => p.id === selectedId) ?? null;
-  const globalKpis = useMemo(() => computeTrackingKpis(tasks, filtered), [tasks, filtered]);
 
   const handleExportAll = () => {
     exportToCsv(
       'catalogo-rpas',
-      PROCESSOS.map((p) => {
-        const queues = p.stages.map((s) => s.queue);
-        const counts = computeCounts(tasks, queues);
-        return {
-          processo: p.nome,
-          motor: p.motor,
-          praca: p.praca,
-          responsavel: p.responsavel,
-          etapas: p.stages.map((s) => s.label).join(' → '),
-          bots: queues.join(', '),
-          exitos: counts.ok,
-          falhas: counts.fail,
-          pendentes: counts.pending,
-          taxa_sucesso: counts.rate !== null ? `${counts.rate}%` : '—',
-        };
-      })
+      PROCESSOS.map((p) => ({
+        processo: p.nome,
+        motor: p.motor,
+        praca: p.praca,
+        responsavel: p.responsavel,
+        etapas: p.stages.map((s) => s.label).join(' → '),
+        bots: p.stages.map((s) => s.queue).join(', '),
+        empresas_elegiveis: p.empresasElegiveis,
+      }))
     );
   };
 
   return (
     <DashboardContent maxWidth="xl">
-      <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h4 className="text-2xl font-semibold">Catálogo de RPAs</h4>
           <p className="text-sm text-muted-foreground">
-            Glossário dos processos automatizados — o que cada um faz, quais bots o compõem e quantas empresas atende.
+            Glossário dos processos automatizados — o que cada um faz, quais bots o compõem e quantas empresas
+            atende. Para acompanhamento de execuções, veja o Painel.
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
-            <Button
-              size="sm"
-              variant={view === 'operacao' ? 'default' : 'ghost'}
-              className="h-7 px-3 text-xs"
-              onClick={() => setView('operacao')}
-            >
-              Operação
-            </Button>
-            <Button
-              size="sm"
-              variant={view === 'interno' ? 'default' : 'ghost'}
-              className="h-7 px-3 text-xs"
-              onClick={() => setView('interno')}
-            >
-              Interno · detalhe
-            </Button>
-          </div>
-          <span className="text-[11px] text-muted-foreground">Mesma base, dois níveis de detalhe</span>
-        </div>
-      </div>
-
-      <div className="mb-2 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1.5">
             <Workflow className="size-3.5" />
             {PROCESSOS.length} processos
@@ -167,9 +118,10 @@ export function CatalogoView() {
             <Download className="size-4" />
             Exportar CSV
           </Button>
+        </div>
       </div>
 
-      <div className="mb-6 mt-4 flex flex-wrap items-end gap-2.5">
+      <div className="mb-6 flex flex-wrap items-end gap-2.5">
         <div className="flex min-w-[220px] flex-1 flex-col gap-1">
           <Label className="text-[11px] text-muted-foreground">Buscar</Label>
           <div className="relative">
@@ -215,114 +167,66 @@ export function CatalogoView() {
         </div>
       </div>
 
-      <div className="mb-6">
-        <TrackingKpiStrip kpis={globalKpis} totalProcessos={filtered.length} />
-      </div>
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((processo) => {
-          const queues = processo.stages.map((s) => s.queue);
-          const counts = loading ? null : computeCounts(tasks, queues);
-
-          return (
-            <Card key={processo.id} className="flex flex-col justify-between">
-              <div>
-                <CardHeader>
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="text-[11px]">
-                      {processo.motor}
-                    </Badge>
-                    <Badge variant="secondary" className="text-[11px]">
-                      {processo.praca}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-base">{processo.nome}</CardTitle>
-                </CardHeader>
-
-                <CardContent className="flex flex-col gap-4">
-                  <p className="text-sm text-muted-foreground">{processo.descricao}</p>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {processo.stages.map((stage, idx) => (
-                      <Tooltip key={stage.queue}>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="cursor-default text-[11px]">
-                            {idx > 0 && '→ '}
-                            {stage.label}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>{stage.queue}</TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </CardContent>
-              </div>
-
-              <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{processo.empresasElegiveis}</span> empresas
-                    elegíveis
-                  </span>
-                  <span className={`text-xs font-semibold ${rateColorClass(counts?.rate ?? null)}`}>
-                    {counts?.rate !== null && counts?.rate !== undefined ? `${counts.rate}% de êxito` : '—'}
-                  </span>
+        {filtered.map((processo) => (
+          <Card key={processo.id} className="flex flex-col justify-between">
+            <div>
+              <CardHeader>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[11px]">
+                    {processo.motor}
+                  </Badge>
+                  <Badge variant="secondary" className="text-[11px]">
+                    {processo.praca}
+                  </Badge>
                 </div>
+                <CardTitle className="text-base">{processo.nome}</CardTitle>
+              </CardHeader>
 
-                {counts && counts.total > 0 && (
-                  <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-                    <span className="h-full bg-success" style={{ width: `${(counts.ok / counts.total) * 100}%` }} />
-                    <span
-                      className="h-full bg-destructive"
-                      style={{ width: `${(counts.fail / counts.total) * 100}%` }}
-                    />
-                    <span
-                      className="h-full bg-[var(--color-neutral-300)]"
-                      style={{ width: `${(counts.pending / counts.total) * 100}%` }}
-                    />
-                  </div>
-                )}
+              <CardContent className="flex flex-col gap-4">
+                <p className="text-sm text-muted-foreground">{processo.descricao}</p>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                    {counts && counts.total > 0 ? (
-                      <>
-                        <span>
-                          <span className="font-semibold text-[var(--success-text)]">{counts.ok}</span> êxitos
-                        </span>
-                        <span>
-                          <span className="font-semibold text-destructive">{counts.fail}</span> falhas
-                        </span>
-                        <span>
-                          <span className="font-semibold text-foreground">{counts.pending}</span> pend.
-                        </span>
-                      </>
-                    ) : (
-                      <span>{loading ? 'Carregando execuções...' : 'Sem execuções no período'}</span>
-                    )}
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 px-2 text-xs"
-                    onClick={() => setSelectedId(processo.id)}
-                  >
-                    <Eye className="size-3.5" />
-                    Detalhar
-                  </Button>
+                <div className="flex flex-wrap gap-1.5">
+                  {processo.stages.map((stage, idx) => (
+                    <Tooltip key={stage.queue}>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="cursor-default text-[11px]">
+                          {idx > 0 && '→ '}
+                          {stage.label}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>{stage.queue}</TooltipContent>
+                    </Tooltip>
+                  ))}
                 </div>
               </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+            </div>
 
-      {view === 'interno' && (
-        <div className="mt-6">
-          <NaoConformidades tasks={tasks} queues={filtered.flatMap((p) => p.stages.map((s) => s.queue))} />
-        </div>
-      )}
+            <CardContent className="flex items-center justify-between border-t border-border pt-4">
+              <span className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{processo.empresasElegiveis}</span> empresas
+                elegíveis
+              </span>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={() => setSelectedId(processo.id)}
+              >
+                <Eye className="size-3.5" />
+                Detalhar
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="col-span-full rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            Nenhum processo com os filtros atuais.
+          </div>
+        )}
+      </div>
 
       <ProcessoDetailDialog
         processo={selectedProcesso}

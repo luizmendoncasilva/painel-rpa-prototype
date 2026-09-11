@@ -1,23 +1,12 @@
 import type { Task } from 'src/types';
-import type { CatalogoViewMode } from 'src/sections/catalogo/view';
 
-import { ChevronRight } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
-import {
-  Bar,
-  Pie,
-  Cell,
-  Area,
-  XAxis,
-  YAxis,
-  Legend,
-  BarChart,
-  PieChart,
-  AreaChart,
-  CartesianGrid,
-  Tooltip as RTooltip,
-  ResponsiveContainer,
-} from 'recharts';
+
+import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
+
+import { useViewMode } from 'src/hooks/use-view-mode';
 
 import axios, { endpoints } from 'src/lib/axios';
 import { generateMockTasks } from 'src/lib/mock-data';
@@ -26,53 +15,35 @@ import { PROCESSOS, computeTrackingKpis } from 'src/assets/data/processos';
 
 import { TrackingKpiStrip } from 'src/components/tracking-kpis';
 import {
-  cn,
-  Card,
   Tabs,
+  Badge,
   Alert,
   Label,
   Button,
   Select,
+  Popover,
   TabsList,
-  CardTitle,
   SelectItem,
-  CardHeader,
   AlertTitle,
-  CardContent,
   TabsTrigger,
   TabsContent,
   SelectValue,
   SelectContent,
   SelectTrigger,
+  PopoverContent,
+  PopoverTrigger,
   AlertDescription,
 } from 'src/components/ui';
 
 import { NaoConformidades } from 'src/sections/catalogo/nao-conformidades';
 
 import { KpiCard } from './kpi-card';
-import { ContratoDados } from './contrato-dados';
 import { KPI_CATALOG_BY_PROCESSO } from './kpi-catalog';
 import { ProcessoAccordion } from './processo-accordion';
 
 // ----------------------------------------------------------------------
 
 const KPI_GRID = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
-
-const DONUT_DATA = [
-  { name: 'Sucesso', value: 1122, color: 'var(--success-border)' },
-  { name: 'Falha', value: 118, color: 'var(--destructive)' },
-  { name: 'Pendente', value: 28, color: 'var(--color-neutral-400)' },
-  { name: 'Em andamento', value: 16, color: 'var(--warning-border)' },
-];
-
-const VOLUME_DATA = [
-  { label: 'jan', sucesso: 148, falha: 12 },
-  { label: 'fev', sucesso: 162, falha: 18 },
-  { label: 'mar', sucesso: 171, falha: 15 },
-  { label: 'abr', sucesso: 189, falha: 21 },
-  { label: 'mai', sucesso: 204, falha: 14 },
-  { label: 'jun', sucesso: 248, falha: 38 },
-];
 
 const ALL = '__all__';
 
@@ -89,14 +60,13 @@ function extractBase(payload: Record<string, unknown> | null): string | null {
 // ----------------------------------------------------------------------
 
 export function KpisPrototipoView() {
+  const { view } = useViewMode();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterMotor, setFilterMotor] = useState('');
   const [filterProcesso, setFilterProcesso] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterBase, setFilterBase] = useState('');
   const [filterCompetencia, setFilterCompetencia] = useState('');
-  const [view, setView] = useState<CatalogoViewMode>('operacao');
-  const [contratoOpen, setContratoOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -154,46 +124,25 @@ export function KpisPrototipoView() {
     [tasksFiltradas, processosFiltrados]
   );
 
+  const extraFiltersCount = [filterStatus, filterBase, filterCompetencia].filter(Boolean).length;
+  const hasAnyFilter = Boolean(filterMotor || filterProcesso) || extraFiltersCount > 0;
+
+  const clearFilters = () => {
+    setFilterMotor('');
+    setFilterProcesso('');
+    setFilterStatus('');
+    setFilterBase('');
+    setFilterCompetencia('');
+  };
+
   return (
     <DashboardContent maxWidth="xl">
-      <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h4 className="text-2xl font-semibold">Painel</h4>
-          <p className="text-sm text-muted-foreground">
-            Acompanhamento dos processos + amostragem de indicadores para stakeholders.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/40 p-0.5">
-            <Button
-              size="sm"
-              variant={view === 'operacao' ? 'default' : 'ghost'}
-              className="h-7 px-3 text-xs"
-              onClick={() => setView('operacao')}
-            >
-              Operação
-            </Button>
-            <Button
-              size="sm"
-              variant={view === 'interno' ? 'default' : 'ghost'}
-              className="h-7 px-3 text-xs"
-              onClick={() => setView('interno')}
-            >
-              Interno · detalhe
-            </Button>
-          </div>
-          <span className="text-[11px] text-muted-foreground">Mesma base, dois níveis de detalhe</span>
-        </div>
+      <div className="mb-6">
+        <h4 className="text-2xl font-semibold">Painel</h4>
+        <p className="text-sm text-muted-foreground">
+          Acompanhamento operacional dos processos. Para o glossário de processos, veja o Catálogo.
+        </p>
       </div>
-
-      <Alert variant="warning" className="mt-4 mb-6">
-        <AlertTitle>Dados ilustrativos</AlertTitle>
-        <AlertDescription>
-          Os KPIs de amostragem abaixo são fictícios, apenas para validar layout e conteúdo — não refletem
-          execuções reais. A faixa de acompanhamento no topo usa os dados carregados de fato.
-        </AlertDescription>
-      </Alert>
 
       <div className="mb-6 flex flex-wrap items-end gap-2.5">
         <div className="flex flex-col gap-1">
@@ -227,263 +176,190 @@ export function KpisPrototipoView() {
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <Label className="text-[11px] text-muted-foreground">Status</Label>
-          <Select value={filterStatus || ALL} onValueChange={(v) => setFilterStatus(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[140px] shrink-0">
-              <SelectValue placeholder="Status: Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              <SelectItem value="COMPLETED">Sucesso</SelectItem>
-              <SelectItem value="FAILED">Falha</SelectItem>
-              <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
-              <SelectItem value="PENDING">Pendente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <SlidersHorizontal className="size-3.5" />
+              Mais filtros
+              {extraFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-0.5 h-4 min-w-4 justify-center px-1 text-[10px]">
+                  {extraFiltersCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <Label className="text-[11px] text-muted-foreground">Status</Label>
+              <Select value={filterStatus || ALL} onValueChange={(v) => setFilterStatus(v === ALL ? '' : v)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Status: Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>Todos</SelectItem>
+                  <SelectItem value="COMPLETED">Sucesso</SelectItem>
+                  <SelectItem value="FAILED">Falha</SelectItem>
+                  <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
+                  <SelectItem value="PENDING">Pendente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="flex flex-col gap-1">
-          <Label className="text-[11px] text-muted-foreground">Base</Label>
-          <Select value={filterBase || ALL} onValueChange={(v) => setFilterBase(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[130px] shrink-0">
-              <SelectValue placeholder="Base: Todas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todas</SelectItem>
-              {bases.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-[11px] text-muted-foreground">Base</Label>
+              <Select value={filterBase || ALL} onValueChange={(v) => setFilterBase(v === ALL ? '' : v)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Base: Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>Todas</SelectItem>
+                  {bases.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="flex flex-col gap-1">
-          <Label className="text-[11px] text-muted-foreground">Competência</Label>
-          <Select value={filterCompetencia || ALL} onValueChange={(v) => setFilterCompetencia(v === ALL ? '' : v)}>
-            <SelectTrigger className="w-[170px] shrink-0">
-              <SelectValue placeholder="Competência: Todas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todas</SelectItem>
-              {competencias.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-[11px] text-muted-foreground">Competência</Label>
+              <Select
+                value={filterCompetencia || ALL}
+                onValueChange={(v) => setFilterCompetencia(v === ALL ? '' : v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Competência: Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>Todas</SelectItem>
+                  {competencias.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </PopoverContent>
+        </Popover>
 
-        {(filterMotor || filterProcesso || filterStatus || filterBase || filterCompetencia) && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setFilterMotor('');
-              setFilterProcesso('');
-              setFilterStatus('');
-              setFilterBase('');
-              setFilterCompetencia('');
-            }}
-          >
+        {hasAnyFilter && (
+          <Button size="sm" variant="outline" onClick={clearFilters}>
             Limpar filtros
           </Button>
         )}
       </div>
 
-      <div className="mb-8">
-        <TrackingKpiStrip kpis={trackingKpis} totalProcessos={processosFiltrados.length} />
-      </div>
+      <Tabs defaultValue="visao-geral">
+        <TabsList>
+          <TabsTrigger value="visao-geral">Visão geral</TabsTrigger>
+          <TabsTrigger value="processos">Processos</TabsTrigger>
+          {view === 'interno' && <TabsTrigger value="qualidade">Qualidade</TabsTrigger>}
+        </TabsList>
 
-      <div className="mb-8">
-        <h5 className="mb-1 text-base font-semibold">Processos</h5>
-        <p className="mb-3 text-xs text-muted-foreground">
-          Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {[...processosFiltrados]
-            .sort((a, b) => {
-              const failA = tasksFiltradas.filter((t) => t.queue === a.stages[0]?.queue && t.status === 'FAILED').length;
-              const failB = tasksFiltradas.filter((t) => t.queue === b.stages[0]?.queue && t.status === 'FAILED').length;
-              return failB - failA;
-            })
-            .map((processo, idx) => (
-              <ProcessoAccordion
-                key={processo.id}
-                processo={processo}
-                tasks={tasksFiltradas}
-                view={view}
-                defaultOpen={idx === 0}
-              />
-            ))}
-          {processosFiltrados.length === 0 && (
-            <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-              Nenhum processo com os filtros atuais.
+        <TabsContent value="visao-geral" className="mt-4 flex flex-col gap-8">
+          <TrackingKpiStrip kpis={trackingKpis} totalProcessos={processosFiltrados.length} />
+
+          <div>
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h5 className="text-base font-semibold">Amostragem de KPIs por processo</h5>
+                <p className="text-xs text-muted-foreground">
+                  Indicadores ilustrativos de cada processo de negócio — evita misturar métricas de frota (que só
+                  fazem sentido para os bots de SPED) com processos que não têm essas dimensões.
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" asChild>
+                <RouterLink href={paths.dashboard.especificacao}>Ver especificação técnica →</RouterLink>
+              </Button>
             </div>
-          )}
-        </div>
-      </div>
 
-      {view === 'interno' && (
-        <div className="mb-8">
-          <h5 className="mb-1 text-base font-semibold">Não conformidades</h5>
+            <Alert variant="warning" className="mb-4">
+              <AlertTitle>Dados ilustrativos</AlertTitle>
+              <AlertDescription>
+                Os KPIs abaixo são fictícios, apenas para validar layout e conteúdo — não refletem execuções reais.
+                A faixa de acompanhamento acima usa os dados carregados de fato.
+              </AlertDescription>
+            </Alert>
+
+            {processosFiltrados.length > 0 ? (
+              <Tabs defaultValue={processosFiltrados[0].id}>
+                <TabsList>
+                  {processosFiltrados.map((processo) => (
+                    <TabsTrigger key={processo.id} value={processo.id}>
+                      {processo.nome}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                {processosFiltrados.map((processo) => {
+                  const items = KPI_CATALOG_BY_PROCESSO[processo.id] ?? [];
+
+                  return (
+                    <TabsContent key={processo.id} value={processo.id} className="mt-4">
+                      <p className="mb-3 text-xs text-muted-foreground">{processo.descricao}</p>
+                      <div className={`grid gap-3 ${KPI_GRID}`}>
+                        {items.map((kpi) => (
+                          <KpiCard key={kpi.id} kpi={kpi} />
+                        ))}
+                      </div>
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
+            ) : (
+              <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+                Nenhum processo com os filtros atuais.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="processos" className="mt-4">
           <p className="mb-3 text-xs text-muted-foreground">
-            Falhas agrupadas por categoria — o que define se o caso vira debug do bot ou tratativa humana.
+            Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
           </p>
-          <NaoConformidades
-            tasks={tasksFiltradas}
-            queues={processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue))}
-          />
-        </div>
-      )}
-
-      <div className="mb-8">
-        <button
-          type="button"
-          onClick={() => setContratoOpen((prev) => !prev)}
-          className="mb-1 flex w-full items-center gap-1.5 text-left"
-        >
-          <ChevronRight className={cn('size-4 text-muted-foreground transition-transform', contratoOpen && 'rotate-90')} />
-          <h5 className="text-base font-semibold">Contrato de dados</h5>
-        </button>
-        <p className="mb-3 pl-5.5 text-xs text-muted-foreground">
-          O que o back-end precisa enviar por execução para o painel conseguir montar tudo acima.
-        </p>
-        {contratoOpen && <ContratoDados />}
-      </div>
-
-      <div className="mb-3">
-        <h5 className="text-base font-semibold">Amostragem de KPIs por processo</h5>
-        <p className="text-xs text-muted-foreground">
-          Indicadores ilustrativos de cada processo de negócio — evita misturar métricas de frota (que só fazem
-          sentido para os bots de SPED) com processos que não têm essas dimensões.
-        </p>
-      </div>
-
-      {processosFiltrados.length > 0 ? (
-        <Tabs defaultValue={processosFiltrados[0].id} className="mb-8">
-          <TabsList>
-            {processosFiltrados.map((processo) => (
-              <TabsTrigger key={processo.id} value={processo.id}>
-                {processo.nome}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {processosFiltrados.map((processo) => {
-            const items = KPI_CATALOG_BY_PROCESSO[processo.id] ?? [];
-
-            return (
-              <TabsContent key={processo.id} value={processo.id} className="mt-4">
-                <p className="mb-3 text-xs text-muted-foreground">{processo.descricao}</p>
-                <div className={`grid gap-3 ${KPI_GRID}`}>
-                  {items.map((kpi) => (
-                    <KpiCard key={kpi.id} kpi={kpi} />
-                  ))}
-                </div>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      ) : (
-        <div className="mb-8 rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-          Nenhum processo com os filtros atuais.
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tendência temporal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="protoGradSucesso" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--success-border)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--success-border)" stopOpacity={0.04} />
-                  </linearGradient>
-                  <linearGradient id="protoGradFalha" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0.04} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                <RTooltip />
-                <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                <Area
-                  type="monotone"
-                  dataKey="sucesso"
-                  name="Sucesso"
-                  stroke="var(--success-border)"
-                  fill="url(#protoGradSucesso)"
-                  strokeWidth={2}
+          <div className="flex flex-col gap-2.5">
+            {[...processosFiltrados]
+              .sort((a, b) => {
+                const failA = tasksFiltradas.filter(
+                  (t) => t.queue === a.stages[0]?.queue && t.status === 'FAILED'
+                ).length;
+                const failB = tasksFiltradas.filter(
+                  (t) => t.queue === b.stages[0]?.queue && t.status === 'FAILED'
+                ).length;
+                return failB - failA;
+              })
+              .map((processo, idx) => (
+                <ProcessoAccordion
+                  key={processo.id}
+                  processo={processo}
+                  tasks={tasksFiltradas}
+                  view={view}
+                  defaultOpen={idx === 0}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="falha"
-                  name="Falha"
-                  stroke="var(--destructive)"
-                  fill="url(#protoGradFalha)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+              ))}
+            {processosFiltrados.length === 0 && (
+              <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+                Nenhum processo com os filtros atuais.
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Desfecho do período</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={DONUT_DATA}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={55}
-                  outerRadius={92}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {DONUT_DATA.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RTooltip />
-                <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Volume por mês</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={VOLUME_DATA} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-              <RTooltip />
-              <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="sucesso" name="Sucesso" stackId="a" fill="var(--success-border)" radius={[0, 0, 0, 0]} maxBarSize={48} />
-              <Bar dataKey="falha" name="Falha" stackId="a" fill="var(--destructive)" radius={[4, 4, 0, 0]} maxBarSize={48} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        {view === 'interno' && (
+          <TabsContent value="qualidade" className="mt-4">
+            <p className="mb-3 text-xs text-muted-foreground">
+              Falhas agrupadas por categoria — o que define se o caso vira debug do bot ou tratativa humana.
+            </p>
+            <NaoConformidades
+              tasks={tasksFiltradas}
+              queues={processosFiltrados.flatMap((p) => p.stages.map((s) => s.queue))}
+            />
+          </TabsContent>
+        )}
+      </Tabs>
     </DashboardContent>
   );
 }

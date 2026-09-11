@@ -50,5 +50,6 @@ export const paths = {
     painel: `${ROOTS.DASHBOARD}/painel`,
     catalogo: `${ROOTS.DASHBOARD}/catalogo`,
     processos: `${ROOTS.DASHBOARD}/processos`,
+    especificacao: `${ROOTS.DASHBOARD}/especificacao`,
   },
 };

@@ -11,6 +11,7 @@ export * from './empty';
 export * from './button';
 export * from './select';
 export * from './dialog';
+export * from './popover';
 export * from './spinner';
 export * from './tooltip';
 export * from './sidebar';
