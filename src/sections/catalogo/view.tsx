@@ -259,7 +259,11 @@ export function CatalogoView() {
               </div>
 
               <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground">{processo.empresasElegiveis}</span> empresas
+                    elegíveis
+                  </span>
                   <span className={`text-xs font-semibold ${rateColorClass(counts?.rate ?? null)}`}>
                     {counts?.rate !== null && counts?.rate !== undefined ? `${counts.rate}% de êxito` : '—'}
                   </span>
