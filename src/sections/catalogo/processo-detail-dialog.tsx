@@ -85,10 +85,6 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                 <span className="font-medium">{processo.responsavel}</span>
               </span>
               <span>
-                <span className="text-muted-foreground">Empresas elegíveis: </span>
-                <span className="font-medium">{processo.empresasElegiveis}</span>
-              </span>
-              <span>
                 <span className="text-muted-foreground">Etapas: </span>
                 <span className="font-medium">{processo.stages.length}</span>
               </span>
