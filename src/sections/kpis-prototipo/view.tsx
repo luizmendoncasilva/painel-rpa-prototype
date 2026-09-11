@@ -1,5 +1,4 @@
 import type { Task } from 'src/types';
-import type { KpiCategory } from './kpi-catalog';
 import type { CatalogoViewMode } from 'src/sections/catalogo/view';
 
 import { ChevronRight } from 'lucide-react';
@@ -52,12 +51,11 @@ import { NaoConformidades } from 'src/sections/catalogo/nao-conformidades';
 
 import { KpiCard } from './kpi-card';
 import { ContratoDados } from './contrato-dados';
+import { KPI_CATALOG_BY_PROCESSO } from './kpi-catalog';
 import { ProcessoAccordion } from './processo-accordion';
-import { KPI_CATALOG, CATEGORY_META } from './kpi-catalog';
 
 // ----------------------------------------------------------------------
 
-const CATEGORY_ORDER: KpiCategory[] = ['volume', 'confiabilidade', 'eficiencia', 'governanca'];
 const KPI_GRID = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
 
 const DONUT_DATA = [
@@ -106,11 +104,11 @@ export function KpisPrototipoView() {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
         const items = (res.data.items as Task[]) ?? [];
-        // Protótipo de demonstração: se a API real não tem tasks ainda, preenche com dados fake
-        if (active) setTasks(items.length > 0 ? items : generateMockTasks());
+        // Em dev, se a API real não tem tasks ainda, preenche com dados fake só para demonstrar o layout
+        if (active) setTasks(items.length > 0 || !import.meta.env.DEV ? items : generateMockTasks());
       } catch {
-        // API inacessível — preenche com dados fake em vez de zerar tudo
-        if (active) setTasks(generateMockTasks());
+        // silencioso em produção; em dev preenche com dados fake em vez de zerar tudo
+        if (active) setTasks(import.meta.env.DEV ? generateMockTasks() : []);
       }
     })();
     return () => {
@@ -358,38 +356,43 @@ export function KpisPrototipoView() {
       </div>
 
       <div className="mb-3">
-        <h5 className="text-base font-semibold">Amostragem de KPIs</h5>
+        <h5 className="text-base font-semibold">Amostragem de KPIs por processo</h5>
         <p className="text-xs text-muted-foreground">
-          Indicadores ilustrativos organizados por categoria — separados por aba para comparar o que faz sentido
-          expor.
+          Indicadores ilustrativos de cada processo de negócio — evita misturar métricas de frota (que só fazem
+          sentido para os bots de SPED) com processos que não têm essas dimensões.
         </p>
       </div>
 
-      <Tabs defaultValue={CATEGORY_ORDER[0]} className="mb-8">
-        <TabsList>
-          {CATEGORY_ORDER.map((category) => (
-            <TabsTrigger key={category} value={category}>
-              {CATEGORY_META[category].label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {processosFiltrados.length > 0 ? (
+        <Tabs defaultValue={processosFiltrados[0].id} className="mb-8">
+          <TabsList>
+            {processosFiltrados.map((processo) => (
+              <TabsTrigger key={processo.id} value={processo.id}>
+                {processo.nome}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {CATEGORY_ORDER.map((category) => {
-          const meta = CATEGORY_META[category];
-          const items = KPI_CATALOG.filter((k) => k.category === category);
+          {processosFiltrados.map((processo) => {
+            const items = KPI_CATALOG_BY_PROCESSO[processo.id] ?? [];
 
-          return (
-            <TabsContent key={category} value={category} className="mt-4">
-              <p className="mb-3 text-xs text-muted-foreground">{meta.description}</p>
-              <div className={`grid gap-3 ${KPI_GRID}`}>
-                {items.map((kpi) => (
-                  <KpiCard key={kpi.id} kpi={kpi} />
-                ))}
-              </div>
-            </TabsContent>
-          );
-        })}
-      </Tabs>
+            return (
+              <TabsContent key={processo.id} value={processo.id} className="mt-4">
+                <p className="mb-3 text-xs text-muted-foreground">{processo.descricao}</p>
+                <div className={`grid gap-3 ${KPI_GRID}`}>
+                  {items.map((kpi) => (
+                    <KpiCard key={kpi.id} kpi={kpi} />
+                  ))}
+                </div>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      ) : (
+        <div className="mb-8 rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+          Nenhum processo com os filtros atuais.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr]">
         <Card>

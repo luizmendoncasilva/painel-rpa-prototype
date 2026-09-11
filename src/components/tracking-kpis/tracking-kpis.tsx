@@ -19,7 +19,7 @@ export function TrackingKpiStrip({ kpis, totalProcessos }: Props) {
   const metaOk = kpis.rate >= META_TAXA_EXITO;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Card padding="sm">
         <CardContent className="flex flex-col gap-0.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -57,16 +57,6 @@ export function TrackingKpiStrip({ kpis, totalProcessos }: Props) {
             {kpis.rate}%
           </span>
           <span className="text-xs text-muted-foreground">meta interna: {META_TAXA_EXITO}%</span>
-        </CardContent>
-      </Card>
-
-      <Card padding="sm" className="border-t-2 border-t-info">
-        <CardContent className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Tempo de robô
-          </span>
-          <span className="text-2xl font-bold tracking-tight text-[var(--info-text)]">{kpis.horasRobo}h</span>
-          <span className="text-xs text-muted-foreground">equivalente de trabalho manual evitado</span>
         </CardContent>
       </Card>
     </div>

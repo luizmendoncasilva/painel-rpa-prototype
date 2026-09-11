@@ -4,25 +4,37 @@ import type { Task, TaskStatus, ComboStatus, StageFailure, ProcessoConfig, Proce
 // Catálogo de processos de negócio — glossário pedido pelo produto na call
 // de alinhamento (27/ago): nome, o que o processo faz, quais bots/etapas o
 // compõem, praça/cliente atendido e quantas empresas são elegíveis hoje.
-// Alguns processos (ex.: Escrituração ISS — SP) são formados por mais de um
-// bot em sequência; o status combinado ("sucesso parcial" quando uma etapa
-// falha e outra não) é calculado a partir das execuções de cada etapa.
+//
+// Cada processo hoje é concluído por 1 bot só — o Guilherme confirmou com o
+// Danilo que não existe, na fila atual, um cenário real de 2+ bots formando
+// um único processo (o agrupamento que a gente tinha modelado para o
+// ISS-SP + Gestta Upload não correspondia à operação). A estrutura de
+// múltiplas "stages" por processo continua no código (genérica, dá suporte
+// a status combinado/"sucesso parcial"), mas nenhum dado atual usa mais de
+// uma etapa — é só para o dia em que existir um processo assim de verdade.
 // ----------------------------------------------------------------------
 
 export const PROCESSOS: ProcessoConfig[] = [
   {
     id: 'iss-sp',
     nome: 'Escrituração ISS — São Paulo',
-    descricao:
-      'Apura e emite a guia mensal de ISS das empresas de São Paulo e entrega o documento já conciliado dentro do Gestta do cliente — sem intervenção manual em nenhuma das duas etapas.',
+    descricao: 'Apura e emite a guia mensal de ISS das empresas de São Paulo direto no portal da prefeitura.',
     motor: 'Fiscal',
     praca: 'São Paulo',
     responsavel: 'Danilo',
     empresasElegiveis: 184,
-    stages: [
-      { queue: 'emissao-iss-sp', label: 'Emissão da guia' },
-      { queue: 'gestta-express-uploader', label: 'Entrega no Gestta' },
-    ],
+    stages: [{ queue: 'emissao-iss-sp', label: 'Emissão da guia' }],
+  },
+  {
+    id: 'gestta-upload',
+    nome: 'Upload Gestta Express',
+    descricao:
+      'Sobe documentos e guias já emitidos para dentro do Gestta do cliente — processo independente, usado por times fiscais que precisam do arquivo conciliado na base do cliente.',
+    motor: 'Fiscal',
+    praca: 'São Paulo',
+    responsavel: 'Danilo',
+    empresasElegiveis: 150,
+    stages: [{ queue: 'gestta-express-uploader', label: 'Upload no Gestta' }],
   },
   {
     id: 'iss-sp-ultrafast',
@@ -191,7 +203,10 @@ export const COMBO_STATUS_VARIANT: Record<ComboStatus, 'success' | 'warning' | '
 // ----------------------------------------------------------------------
 // KPIs de acompanhamento — mesma leitura do modelo de referência trazido
 // pelos stakeholders (Processos monitorados / Êxitos / Falhas / Taxa de
-// êxito / Tempo de robô). Reutilizado no Catálogo e no Painel.
+// êxito). Reutilizado no Catálogo e no Painel.
+// "Tempo de robô" foi removido: não existe dado real de tempo manual para
+// comparar, então o card de "trabalho manual evitado" era enganoso
+// (feedback do Guilherme em 03/set).
 // ----------------------------------------------------------------------
 
 export interface TrackingKpis {
@@ -199,7 +214,6 @@ export interface TrackingKpis {
   ok: number;
   fail: number;
   rate: number;
-  horasRobo: number;
 }
 
 export function computeTrackingKpis(tasks: Task[], processos: ProcessoConfig[]): TrackingKpis {
@@ -209,13 +223,7 @@ export function computeTrackingKpis(tasks: Task[], processos: ProcessoConfig[]):
   const fail = relevant.filter((t) => t.status === 'FAILED').length;
   const rate = ok + fail > 0 ? Math.round((ok / (ok + fail)) * 1000) / 10 : 0;
 
-  const totalSeconds = relevant.reduce((sum, t) => {
-    if (t.status !== 'COMPLETED' && t.status !== 'FAILED') return sum;
-    const diff = (new Date(t.updated_at).getTime() - new Date(t.created_at).getTime()) / 1000;
-    return diff > 0 ? sum + diff : sum;
-  }, 0);
-
   const monitorados = processos.filter((p) => p.stages.some((s) => relevant.some((t) => t.queue === s.queue))).length;
 
-  return { processos: monitorados, ok, fail, rate, horasRobo: Math.round(totalSeconds / 3600) };
+  return { processos: monitorados, ok, fail, rate };
 }

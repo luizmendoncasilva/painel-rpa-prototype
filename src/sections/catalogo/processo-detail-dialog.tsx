@@ -39,6 +39,8 @@ interface Props {
 export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) {
   const cases = useMemo(() => (processo ? buildProcessoCases(processo, tasks) : []), [processo, tasks]);
   const interno = view === 'interno';
+  const multiEtapa = (processo?.stages.length ?? 0) > 1;
+  const baseCols = multiEtapa ? 4 : 3;
 
   const handleExport = () => {
     if (!processo) return;
@@ -117,8 +119,8 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                   <TableRow>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Competência</TableHead>
-                    <TableHead>Trilha</TableHead>
-                    <TableHead>Status combinado</TableHead>
+                    {multiEtapa && <TableHead>Trilha</TableHead>}
+                    <TableHead>{multiEtapa ? 'Status combinado' : 'Status'}</TableHead>
                     {interno && <TableHead>Categoria / mensagem</TableHead>}
                     {interno && <TableHead>Chamado</TableHead>}
                   </TableRow>
@@ -126,7 +128,10 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                 <TableBody>
                   {cases.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={interno ? 6 : 4} className="py-10 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={interno ? baseCols + 2 : baseCols}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
                         Nenhum caso encontrado neste período.
                       </TableCell>
                     </TableRow>
@@ -139,9 +144,11 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                         <TableRow key={c.key}>
                           <TableCell className="text-sm font-medium">{c.empresa}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{c.competencia ?? '—'}</TableCell>
-                          <TableCell>
-                            <MiniTrail stages={processo.stages} stageStatus={c.stageStatus} />
-                          </TableCell>
+                          {multiEtapa && (
+                            <TableCell>
+                              <MiniTrail stages={processo.stages} stageStatus={c.stageStatus} />
+                            </TableCell>
+                          )}
                           <TableCell>
                             <Badge variant={COMBO_STATUS_VARIANT[c.comboStatus]}>
                               {COMBO_STATUS_LABEL[c.comboStatus]}

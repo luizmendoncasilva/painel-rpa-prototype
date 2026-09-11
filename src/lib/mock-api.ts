@@ -9,10 +9,9 @@ import {
 } from './mock-data';
 
 // ----------------------------------------------------------------------
-// Roteador de mocks: este é o repositório de demonstração (deploy público),
-// não o painel real da BHub. Intercepta chamadas à API quando ela não
-// responde OU quando responde com lista vazia, e devolve dados fake no
-// mesmo formato da API real, para o protótipo nunca aparecer zerado.
+// Roteador de mocks: intercepta chamadas à API quando ela não está no ar
+// (apenas em dev — ver src/lib/axios.ts) e devolve dados fake no mesmo
+// formato da API real, para visualizar as telas preenchidas.
 // ----------------------------------------------------------------------
 
 function fakeResponse<T>(data: T, config: InternalAxiosRequestConfig): AxiosResponse<T> {
@@ -25,20 +24,9 @@ function fakeResponse<T>(data: T, config: InternalAxiosRequestConfig): AxiosResp
   };
 }
 
-export function pathOf(config: InternalAxiosRequestConfig): string {
+function pathOf(config: InternalAxiosRequestConfig): string {
   const url = config.url ?? '';
   return url.replace(/^https?:\/\/[^/]+/, '').split('?')[0];
-}
-
-export function isEmptyGetResponse(path: string, data: unknown): boolean {
-  if (path === '/tasks' || path === '/execution-logs') {
-    const items = (data as { items?: unknown[] } | null)?.items;
-    return !Array.isArray(items) || items.length === 0;
-  }
-  if (path === '/bots' || path === '/users') {
-    return !Array.isArray(data) || data.length === 0;
-  }
-  return false;
 }
 
 let botsStore: ReturnType<typeof generateMockBots> | null = null;

@@ -113,10 +113,10 @@ export function ProcessoAccordion({ processo, tasks, view, defaultOpen = false }
 
       {open && (
         <div className="border-t border-border bg-muted/20 px-4 pb-4 pt-4">
-          {interno && (
+          {interno && processo.stages.length > 1 && (
             <div className="mb-5">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Trilha do processo — {processo.stages.length} bot{processo.stages.length > 1 ? 's' : ''} em sequência
+                Trilha do processo — {processo.stages.length} bots em sequência
               </p>
               <div className="flex flex-wrap gap-3">
                 {stageSummary.map(({ stage, ok, fail, pctFail }, idx) => (
@@ -182,6 +182,7 @@ function CaseTable({
   }
 
   const visible = cases.slice(0, 30);
+  const multiEtapa = processo.stages.length > 1;
 
   return (
     <div className="max-h-72 overflow-auto rounded-md border border-border bg-card">
@@ -191,7 +192,7 @@ function CaseTable({
             <TableHead>Empresa / Cliente</TableHead>
             <TableHead>CNPJ</TableHead>
             <TableHead>Base</TableHead>
-            <TableHead>Trilha</TableHead>
+            {multiEtapa && <TableHead>Trilha</TableHead>}
             {interno && <TableHead>Quebrou em</TableHead>}
             <TableHead>Duração</TableHead>
             <TableHead>Data / hora</TableHead>
@@ -207,9 +208,11 @@ function CaseTable({
                 <TableCell className="text-sm font-medium">{c.empresa}</TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">{c.cnpj ?? '—'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{c.base ?? '—'}</TableCell>
-                <TableCell>
-                  <MiniTrail stages={processo.stages} stageStatus={c.stageStatus} />
-                </TableCell>
+                {multiEtapa && (
+                  <TableCell>
+                    <MiniTrail stages={processo.stages} stageStatus={c.stageStatus} />
+                  </TableCell>
+                )}
                 {interno && (
                   <TableCell>
                     {failure ? (

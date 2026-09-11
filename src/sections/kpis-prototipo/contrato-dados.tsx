@@ -7,10 +7,14 @@ import { Card, CardContent } from 'src/components/ui';
 // o Danilo e o Guilherme na call de alinhamento.
 // ----------------------------------------------------------------------
 
+// Exemplo HIPOTÉTICO de processo com 2+ bots em sequência — capacidade que o
+// schema já suporta, mas que hoje não existe em nenhuma fila real (confirmado
+// pelo Guilherme com o Danilo: cada bot conclui um processo individual). Um
+// processo de 1 bot só (o caso de todos hoje) manda "etapas" com 1 item.
 const PAYLOAD_EXAMPLE = `// 1 registro = 1 processo rodado para 1 CNPJ em 1 competência
 {
-  "execucao_id": "exe_2026-07_iss-sp_0412",
-  "processo":    { "id": "iss-sp", "nome": "Emissão Guia ISS — São Paulo", "motor": "Fiscal" },
+  "execucao_id": "exe_2026-07_exemplo_0412",
+  "processo":    { "id": "exemplo-hipotetico", "nome": "Processo hipotético com 2 bots", "motor": "Fiscal" },
   "cliente":     { "cnpj": "41.207.336/0001-84", "razao_social": "…", "base": "Base 3" },
   "competencia": "2026-07",
   "status":       "falha",        // sucesso | falha | pendente — derivado das etapas
@@ -18,12 +22,11 @@ const PAYLOAD_EXAMPLE = `// 1 registro = 1 processo rodado para 1 CNPJ em 1 comp
   "duracao_seg":  742,
   "origem":       "agendado",     // agendado | manual | reprocessamento
   "etapas": [
-    { "ordem": 1, "bot": "BOT-11", "nome": "Coleta de tokens Gestta", "status": "sucesso", "duracao_seg": 61 },
-    { "ordem": 2, "bot": "BOT-12", "nome": "Geração da guia no portal SP", "status": "falha",
+    { "ordem": 1, "bot": "BOT-11", "nome": "Primeira etapa do processo", "status": "sucesso", "duracao_seg": 61 },
+    { "ordem": 2, "bot": "BOT-12", "nome": "Segunda etapa do processo", "status": "falha",
       "categoria": "Inscrição municipal inválida",
       "mensagem":  "CCM não localizado para o CNPJ informado",
-      "tratativa": "humana", "chamado": "FIS-1042" },
-    { "ordem": 3, "bot": "BOT-13", "nome": "Upload Gestta Express", "status": "nao_executado" }
+      "tratativa": "humana", "chamado": "FIS-1042" }
   ],
   "evidencia_url": "…"          // print/PDF que a operação confere
 }`;
@@ -57,7 +60,8 @@ export function ContratoDados() {
           <h3 className="mb-1 text-sm font-semibold">Payload por execução de processo</h3>
           <p className="max-w-3xl text-sm text-background/70">
             Um registro por processo executado por cliente/competência. As etapas são o array — é daí que sai a
-            trilha e o &quot;onde quebrou&quot;.
+            trilha e o &quot;onde quebrou&quot;. Exemplo abaixo com 2 etapas é hipotético: hoje todo processo tem 1
+            bot só, mas o schema já suporta mais quando surgir um caso real.
           </p>
         </div>
 

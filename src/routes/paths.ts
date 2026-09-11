@@ -49,5 +49,6 @@ export const paths = {
     users: `${ROOTS.DASHBOARD}/users`,
     painel: `${ROOTS.DASHBOARD}/painel`,
     catalogo: `${ROOTS.DASHBOARD}/catalogo`,
+    processos: `${ROOTS.DASHBOARD}/processos`,
   },
 };
