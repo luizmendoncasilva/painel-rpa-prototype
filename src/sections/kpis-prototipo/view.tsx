@@ -67,6 +67,7 @@ export function KpisPrototipoView() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterBase, setFilterBase] = useState('');
   const [filterCompetencia, setFilterCompetencia] = useState('');
+  const [kpiSampleId, setKpiSampleId] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -123,6 +124,9 @@ export function KpisPrototipoView() {
     () => computeTrackingKpis(tasksFiltradas, processosFiltrados),
     [tasksFiltradas, processosFiltrados]
   );
+
+  const kpiSampleProcesso =
+    processosFiltrados.find((p) => p.id === kpiSampleId) ?? processosFiltrados[0] ?? null;
 
   const extraFiltersCount = [filterStatus, filterBase, filterCompetencia].filter(Boolean).length;
   const hasAnyFilter = Boolean(filterMotor || filterProcesso) || extraFiltersCount > 0;
@@ -283,31 +287,31 @@ export function KpisPrototipoView() {
               </AlertDescription>
             </Alert>
 
-            {processosFiltrados.length > 0 ? (
-              <Tabs defaultValue={processosFiltrados[0].id}>
-                <TabsList>
-                  {processosFiltrados.map((processo) => (
-                    <TabsTrigger key={processo.id} value={processo.id}>
-                      {processo.nome}
-                    </TabsTrigger>
+            {kpiSampleProcesso ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1 sm:w-[280px]">
+                  <Label className="text-[11px] text-muted-foreground">Processo</Label>
+                  <Select value={kpiSampleProcesso.id} onValueChange={setKpiSampleId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {processosFiltrados.map((processo) => (
+                        <SelectItem key={processo.id} value={processo.id}>
+                          {processo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <p className="text-xs text-muted-foreground">{kpiSampleProcesso.descricao}</p>
+                <div className={`grid gap-3 ${KPI_GRID}`}>
+                  {(KPI_CATALOG_BY_PROCESSO[kpiSampleProcesso.id] ?? []).map((kpi) => (
+                    <KpiCard key={kpi.id} kpi={kpi} />
                   ))}
-                </TabsList>
-
-                {processosFiltrados.map((processo) => {
-                  const items = KPI_CATALOG_BY_PROCESSO[processo.id] ?? [];
-
-                  return (
-                    <TabsContent key={processo.id} value={processo.id} className="mt-4">
-                      <p className="mb-3 text-xs text-muted-foreground">{processo.descricao}</p>
-                      <div className={`grid gap-3 ${KPI_GRID}`}>
-                        {items.map((kpi) => (
-                          <KpiCard key={kpi.id} kpi={kpi} />
-                        ))}
-                      </div>
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
+                </div>
+              </div>
             ) : (
               <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
                 Nenhum processo com os filtros atuais.
