@@ -25,7 +25,14 @@ import {
   DialogDescription,
 } from 'src/components/ui';
 
+import { KpiCard } from 'src/sections/kpis-prototipo/kpi-card';
+import { KPI_CATALOG_BY_PROCESSO } from 'src/sections/kpis-prototipo/kpi-catalog';
+
 import { MiniTrail } from './mini-trail';
+
+// ----------------------------------------------------------------------
+
+const KPI_GRID = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +45,7 @@ interface Props {
 
 export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) {
   const cases = useMemo(() => (processo ? buildProcessoCases(processo, tasks) : []), [processo, tasks]);
+  const kpis = useMemo(() => (processo ? (KPI_CATALOG_BY_PROCESSO[processo.id] ?? []) : []), [processo]);
   const interno = view === 'interno';
   const multiEtapa = (processo?.stages.length ?? 0) > 1;
   const baseCols = multiEtapa ? 4 : 3;
@@ -98,6 +106,19 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                 </Badge>
               ))}
             </div>
+
+            {kpis.length > 0 && (
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  KPIs do processo
+                </p>
+                <div className={`grid gap-3 ${KPI_GRID}`}>
+                  {kpis.map((kpi) => (
+                    <KpiCard key={kpi.id} kpi={kpi} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
