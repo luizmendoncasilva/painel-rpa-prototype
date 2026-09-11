@@ -1,7 +1,7 @@
 import type { Task } from 'src/types';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Eye, Search, Download, Workflow, Building2 } from 'lucide-react';
+import { Eye, Search, Download, Workflow } from 'lucide-react';
 
 import { exportToCsv } from 'src/utils/export-csv';
 
@@ -100,7 +100,6 @@ export function CatalogoView() {
     });
   }, [search, filterMotor, filterPraca]);
 
-  const totalEmpresas = useMemo(() => PROCESSOS.reduce((sum, p) => sum + p.empresasElegiveis, 0), []);
   const selectedProcesso = PROCESSOS.find((p) => p.id === selectedId) ?? null;
   const globalKpis = useMemo(() => computeTrackingKpis(tasks, filtered), [tasks, filtered]);
 
@@ -117,7 +116,6 @@ export function CatalogoView() {
           responsavel: p.responsavel,
           etapas: p.stages.map((s) => s.label).join(' → '),
           bots: queues.join(', '),
-          empresas_elegiveis: p.empresasElegiveis,
           exitos: counts.ok,
           falhas: counts.fail,
           pendentes: counts.pending,
@@ -164,10 +162,6 @@ export function CatalogoView() {
           <Badge variant="outline" className="gap-1.5">
             <Workflow className="size-3.5" />
             {PROCESSOS.length} processos
-          </Badge>
-          <Badge variant="outline" className="gap-1.5">
-            <Building2 className="size-3.5" />
-            {totalEmpresas} empresas elegíveis
           </Badge>
           <Button variant="outline" size="sm" onClick={handleExportAll}>
             <Download className="size-4" />
@@ -265,11 +259,7 @@ export function CatalogoView() {
               </div>
 
               <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{processo.empresasElegiveis}</span> empresas
-                    elegíveis
-                  </span>
+                <div className="flex items-center justify-end">
                   <span className={`text-xs font-semibold ${rateColorClass(counts?.rate ?? null)}`}>
                     {counts?.rate !== null && counts?.rate !== undefined ? `${counts.rate}% de êxito` : '—'}
                   </span>
