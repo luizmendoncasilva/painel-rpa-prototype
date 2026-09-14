@@ -1,12 +1,15 @@
 import type { Task, DonutItem, TaskStatus, ReportData, TimelineItem, RpaReportItem } from 'src/types';
 
-import { BarChart3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Download, BarChart3, Presentation } from 'lucide-react';
 import {
   Bar, Pie, Cell, Area, XAxis, YAxis, Legend, Tooltip,
   BarChart, PieChart, AreaChart, LabelList,
   CartesianGrid, ResponsiveContainer,
 } from 'recharts';
+
+import { exportToCsv } from 'src/utils/export-csv';
+import { exportReportToPptx } from 'src/utils/export-pptx';
 
 import axios, { endpoints } from 'src/lib/axios';
 import { RPA_CONFIG } from 'src/assets/data/rpa-config';
@@ -18,6 +21,7 @@ import {
   Input,
   Label,
   Alert,
+  Button,
   Select,
   CardTitle,
   AlertTitle,
@@ -49,11 +53,20 @@ const STATUS_LABEL_PT: Record<TaskStatus, string> = {
   PENDING: 'Pendente',
 };
 
+const ORIGEM_OPTIONS = [
+  { value: 'schedule', label: 'Agendado' },
+  { value: 'Manual', label: 'Manual' },
+  { value: 'Teste', label: 'Teste' },
+];
+
 // ----------------------------------------------------------------------
 
 interface EnrichedForReport extends Task {
   _rpa: { name: string; shortName: string; motor: string };
   _cnpj: string | null;
+  _origem: string;
+  _base: string | null;
+  _competencia: string | null;
 }
 
 function getRpaInfo(queue: string) {
@@ -66,26 +79,68 @@ function extractCnpj(payload: Record<string, unknown> | null): string | null {
   return (payload.CNPJ as string) ?? vars?.CNPJ ?? vars?.cnpj ?? null;
 }
 
+function extractCompetencia(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  const vars = payload.variables as Record<string, string> | undefined;
+  return (payload.competencia as string) ?? vars?.competencia ?? vars?.competence ?? null;
+}
+
+function extractBase(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null;
+  return (payload.base as string) ?? null;
+}
+
+function extractOrigem(task: Task): string {
+  const vars = task.payload?.variables as Record<string, string> | undefined;
+  const origem = vars?.origem;
+  if (origem) return origem;
+  const ck = task.correlation_key ?? '';
+  if (
+    ck.includes('pilot') ||
+    ck.startsWith('trigger-test-') ||
+    ck.startsWith('teste-') ||
+    (task.payload?.trigger_only as boolean)
+  )
+    return 'Teste';
+  if (ck.includes('entrega-manual')) return 'Manual';
+  if (ck.startsWith('iss-sp-')) return 'iss-sp';
+  if (ck.startsWith('fgts-')) return 'fgts';
+  if (ck.startsWith('proc-')) return 'Processo manual';
+  return 'schedule';
+}
+
 function enrichTasks(tasks: Task[]): EnrichedForReport[] {
   return tasks.map((task) => ({
     ...task,
     _rpa: getRpaInfo(task.queue),
     _cnpj: extractCnpj(task.payload),
+    _origem: extractOrigem(task),
+    _base: extractBase(task.payload),
+    _competencia: extractCompetencia(task.payload),
   }));
 }
 
-function computeReportData(
-  enriched: EnrichedForReport[],
-  filterMotor: string,
-  filterRpa: string,
-  filterDateFrom: string,
-  filterDateTo: string
-): ReportData | null {
+interface ReportFilters {
+  motor: string;
+  rpa: string;
+  status: string;
+  origem: string;
+  base: string;
+  competencia: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+function computeReportData(enriched: EnrichedForReport[], filters: ReportFilters): ReportData | null {
   let result = enriched;
-  if (filterMotor) result = result.filter((t) => t._rpa.motor === filterMotor);
-  if (filterRpa) result = result.filter((t) => t.queue === filterRpa);
-  if (filterDateFrom) result = result.filter((t) => t.updated_at >= filterDateFrom);
-  if (filterDateTo) result = result.filter((t) => t.updated_at <= `${filterDateTo}T23:59:59`);
+  if (filters.motor) result = result.filter((t) => t._rpa.motor === filters.motor);
+  if (filters.rpa) result = result.filter((t) => t.queue === filters.rpa);
+  if (filters.status) result = result.filter((t) => t.status === filters.status);
+  if (filters.origem) result = result.filter((t) => t._origem === filters.origem);
+  if (filters.base) result = result.filter((t) => t._base?.toLowerCase().includes(filters.base.toLowerCase()));
+  if (filters.competencia) result = result.filter((t) => t._competencia === filters.competencia);
+  if (filters.dateFrom) result = result.filter((t) => t.updated_at >= filters.dateFrom);
+  if (filters.dateTo) result = result.filter((t) => t.updated_at <= `${filters.dateTo}T23:59:59`);
 
   if (!result.length) return null;
 
@@ -278,11 +333,16 @@ function VolumeRpaChart({ data }: { data: RpaReportItem[] }) {
 export function RelatoriosView() {
   const [filterMotor, setFilterMotor] = useState('');
   const [filterRpa, setFilterRpa] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterOrigem, setFilterOrigem] = useState('');
+  const [filterBase, setFilterBase] = useState('');
+  const [filterCompetencia, setFilterCompetencia] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [exportingPptx, setExportingPptx] = useState(false);
   // undefined = não gerado | null = sem dados | {...} = tem dados
   const [reportData, setReportData] = useState<ReportData | null | undefined>(undefined);
 
@@ -294,15 +354,28 @@ export function RelatoriosView() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [filterMotor]);
 
+  const resetReport = () => setReportData(undefined);
+
   const handleMotorChange = (value: string) => {
     setFilterMotor(value);
     setFilterRpa('');
-    setReportData(undefined);
+    resetReport();
   };
 
   const handleRpaChange = (value: string) => {
     setFilterRpa(value);
-    setReportData(undefined);
+    resetReport();
+  };
+
+  const currentFilters: ReportFilters = {
+    motor: filterMotor,
+    rpa: filterRpa,
+    status: filterStatus,
+    origem: filterOrigem,
+    base: filterBase,
+    competencia: filterCompetencia,
+    dateFrom: filterDateFrom,
+    dateTo: filterDateTo,
   };
 
   const handleGerar = async () => {
@@ -310,13 +383,13 @@ export function RelatoriosView() {
     setFetchError(null);
     setReportData(undefined);
     try {
-      const params: Record<string, unknown> = {};
+      const params: Record<string, unknown> = { all: 'true' };
       if (filterRpa) params.queue = filterRpa;
 
       const res = await axios.get(endpoints.tasks.list, { params });
       const items = (res.data.items as Task[]) ?? [];
       const enriched = enrichTasks(items);
-      const data = computeReportData(enriched, filterMotor, filterRpa, filterDateFrom, filterDateTo);
+      const data = computeReportData(enriched, currentFilters);
       setReportData(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao buscar dados da API.';
@@ -324,6 +397,41 @@ export function RelatoriosView() {
       setReportData(null);
     } finally {
       setFetching(false);
+    }
+  };
+
+  const handleExportCsv = () => {
+    if (!reportData) return;
+    exportToCsv(
+      'relatorio-rpa',
+      reportData.rpaData.map((d) => ({
+        rpa: d.fullName,
+        motor: d.motor,
+        sucesso: d.COMPLETED,
+        falha: d.FAILED,
+        pendente: d.PENDING + d.IN_PROGRESS,
+        total: d.total,
+        taxa_sucesso: `${d.taxa}%`,
+      }))
+    );
+  };
+
+  const handleExportPptx = async () => {
+    if (!reportData) return;
+    setExportingPptx(true);
+    try {
+      await exportReportToPptx(reportData, {
+        motor: filterMotor,
+        rpa: availableRpas.find((r) => r.queue === filterRpa)?.name ?? '',
+        status: filterStatus ? STATUS_LABEL_PT[filterStatus as TaskStatus] : '',
+        origem: ORIGEM_OPTIONS.find((o) => o.value === filterOrigem)?.label ?? '',
+        base: filterBase,
+        competencia: filterCompetencia,
+        dateFrom: filterDateFrom,
+        dateTo: filterDateTo,
+      });
+    } finally {
+      setExportingPptx(false);
     }
   };
 
@@ -371,12 +479,65 @@ export function RelatoriosView() {
           </div>
 
           <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Status</Label>
+            <Select value={filterStatus || ALL} onValueChange={(v) => { setFilterStatus(v === ALL ? '' : v); resetReport(); }}>
+              <SelectTrigger className="w-[140px] shrink-0">
+                <SelectValue placeholder="Status: Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="COMPLETED">Sucesso</SelectItem>
+                <SelectItem value="FAILED">Falha</SelectItem>
+                <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
+                <SelectItem value="PENDING">Pendente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Origem</Label>
+            <Select value={filterOrigem || ALL} onValueChange={(v) => { setFilterOrigem(v === ALL ? '' : v); resetReport(); }}>
+              <SelectTrigger className="w-[140px] shrink-0">
+                <SelectValue placeholder="Origem: Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todas</SelectItem>
+                {ORIGEM_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Base</Label>
+            <Input
+              placeholder="Ex: Base 3"
+              aria-label="Base"
+              value={filterBase}
+              onChange={(e) => { setFilterBase(e.target.value); resetReport(); }}
+              className="w-[130px] shrink-0"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-[11px] text-muted-foreground">Competência</Label>
+            <Input
+              type="month"
+              aria-label="Competência"
+              value={filterCompetencia}
+              onChange={(e) => { setFilterCompetencia(e.target.value); resetReport(); }}
+              className="w-[152px] shrink-0"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
             <Label className="text-[11px] text-muted-foreground">De</Label>
             <Input
               type="date"
               aria-label="De"
               value={filterDateFrom}
-              onChange={(e) => { setFilterDateFrom(e.target.value); setReportData(undefined); }}
+              onChange={(e) => { setFilterDateFrom(e.target.value); resetReport(); }}
               className="w-[152px] shrink-0"
             />
           </div>
@@ -387,7 +548,7 @@ export function RelatoriosView() {
               type="date"
               aria-label="Até"
               value={filterDateTo}
-              onChange={(e) => { setFilterDateTo(e.target.value); setReportData(undefined); }}
+              onChange={(e) => { setFilterDateTo(e.target.value); resetReport(); }}
               className="w-[152px] shrink-0"
             />
           </div>
@@ -430,6 +591,23 @@ export function RelatoriosView() {
 
       {reportData && (
         <>
+          <div className="mb-4 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportCsv}>
+              <Download className="size-4" />
+              Exportar CSV
+            </Button>
+            <LoadingButton
+              variant="outline"
+              size="sm"
+              onClick={handleExportPptx}
+              loading={exportingPptx}
+              loadingText="Gerando..."
+            >
+              <Presentation className="size-4" />
+              Exportar Apresentação
+            </LoadingButton>
+          </div>
+
           <Card className="mb-6">
             <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-4 divide-x divide-border">
               <div>
