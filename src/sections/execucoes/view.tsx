@@ -5,6 +5,7 @@ import { X, Search, ArrowUp, Download, ArrowDown, RefreshCw, ChevronLeft, ArrowU
 
 import { fDateTime } from 'src/utils/format-time';
 import { exportToCsv } from 'src/utils/export-csv';
+import { normalizeList } from 'src/utils/normalize-list';
 
 import axios, { endpoints } from 'src/lib/axios';
 import { RPA_CONFIG } from 'src/assets/data/rpa-config';
@@ -244,7 +245,7 @@ export function ExecucoesView() {
             })
           )
         );
-        const merged = results.flatMap((r) => (r.data.items as Task[]) ?? []);
+        const merged = results.flatMap((r) => normalizeList<Task>(r.data));
         const motorCapped = results.some((r) => Boolean(r.data.capped));
         setTasks(merged);
         setIsCapped(motorCapped);
@@ -259,8 +260,8 @@ export function ExecucoesView() {
         if (dateFrom) params.updated_at_from = dateFrom;
         if (dateTo) params.updated_at_to = `${dateTo}T23:59:59`;
         const res = await axios.get(endpoints.tasks.list, { params });
-        setTasks((res.data.items as Task[]) ?? []);
-        setIsCapped(Boolean(res.data.capped));
+        setTasks(normalizeList<Task>(res.data));
+        setIsCapped(Boolean(res.data?.capped));
         setNextCursor(null);
         setCursor(undefined);
         setCursorHistory([]);
@@ -271,8 +272,8 @@ export function ExecucoesView() {
         if (rpa) params.queue = rpa;
         if (fetchCursor) params.cursor = fetchCursor;
         const res = await axios.get(endpoints.tasks.list, { params });
-        setTasks((res.data.items as Task[]) ?? []);
-        setNextCursor(res.data.next_cursor ?? null);
+        setTasks(normalizeList<Task>(res.data));
+        setNextCursor(res.data?.next_cursor ?? null);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar execuções.';

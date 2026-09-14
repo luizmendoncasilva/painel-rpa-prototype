@@ -8,6 +8,8 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect, useCallback } from 'react';
 
+import { normalizeList } from 'src/utils/normalize-list';
+
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -51,7 +53,7 @@ export function UsersView() {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await axios.get(endpoints.users.list);
-      setUsers(res.data as User[]);
+      setUsers(normalizeList<User>(res.data));
     } catch {
       toast.error('Erro ao carregar usuários');
     } finally {

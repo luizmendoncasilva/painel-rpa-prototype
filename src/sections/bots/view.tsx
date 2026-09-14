@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Play, Pencil, Search, Trash2, ArrowUp, FileText, ArrowDown, ArrowUpDown } from 'lucide-react';
 
+import { normalizeList } from 'src/utils/normalize-list';
+
 import axios, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -58,7 +60,7 @@ export function BotsView() {
   const fetchBots = useCallback(async () => {
     try {
       const res = await axios.get(endpoints.bots.list);
-      setBots(res.data as Bot[]);
+      setBots(normalizeList<Bot>(res.data));
     } catch {
       toast.error('Erro ao carregar bots');
     } finally {

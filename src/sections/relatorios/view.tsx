@@ -9,9 +9,11 @@ import {
 } from 'recharts';
 
 import { exportToCsv } from 'src/utils/export-csv';
+import { normalizeList } from 'src/utils/normalize-list';
 import { exportReportToPptx } from 'src/utils/export-pptx';
 
 import axios, { endpoints } from 'src/lib/axios';
+import { generateMockTasks } from 'src/lib/mock-data';
 import { RPA_CONFIG } from 'src/assets/data/rpa-config';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -387,7 +389,10 @@ export function RelatoriosView() {
       if (filterRpa) params.queue = filterRpa;
 
       const res = await axios.get(endpoints.tasks.list, { params });
-      const items = (res.data.items as Task[]) ?? [];
+      const fetched = normalizeList<Task>(res.data);
+      // Protótipo sem back-end real conectado: uma resposta vazia não deve
+      // resultar numa tela sem nada pra mostrar numa demo.
+      const items = fetched.length > 0 ? fetched : generateMockTasks();
       const enriched = enrichTasks(items);
       const data = computeReportData(enriched, currentFilters);
       setReportData(data);

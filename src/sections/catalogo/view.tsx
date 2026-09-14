@@ -7,8 +7,10 @@ import { Eye, Search, Download, Workflow } from 'lucide-react';
 import { useViewMode } from 'src/hooks/use-view-mode';
 
 import { exportToCsv } from 'src/utils/export-csv';
+import { normalizeList } from 'src/utils/normalize-list';
 
 import axios, { endpoints } from 'src/lib/axios';
+import { generateMockTasks } from 'src/lib/mock-data';
 import { PROCESSOS } from 'src/assets/data/processos';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -59,9 +61,12 @@ export function CatalogoView() {
     (async () => {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
-        if (active) setTasks((res.data.items as Task[]) ?? []);
+        const items = normalizeList<Task>(res.data);
+        // Protótipo sem back-end real conectado: sem tasks, os cards do
+        // catálogo ficam sem nenhum dado de execução para mostrar na demo.
+        if (active) setTasks(items.length > 0 ? items : generateMockTasks());
       } catch {
-        // silencioso — a lista de processos é dado estático e não depende disso
+        if (active) setTasks(generateMockTasks());
       }
     })();
     return () => {

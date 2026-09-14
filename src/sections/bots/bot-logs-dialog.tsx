@@ -3,6 +3,8 @@ import type { Bot } from 'src/types';
 import { useState, useEffect, useCallback } from 'react';
 import { X, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { normalizeList } from 'src/utils/normalize-list';
+
 import axios, { endpoints } from 'src/lib/axios';
 
 import {
@@ -101,8 +103,8 @@ export function BotLogsDialog({ open, bot, onClose }: Props) {
         };
         if (filter) params.status = filter;
         const res = await axios.get(endpoints.executionLogs.list, { params });
-        setLogs((res.data.items as ExecutionLog[]) ?? []);
-        setTotal((res.data.total as number) ?? 0);
+        setLogs(normalizeList<ExecutionLog>(res.data));
+        setTotal((res.data?.total as number) ?? 0);
       } finally {
         setLoading(false);
       }

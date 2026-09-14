@@ -8,6 +8,8 @@ import { RouterLink } from 'src/routes/components';
 
 import { useViewMode } from 'src/hooks/use-view-mode';
 
+import { normalizeList } from 'src/utils/normalize-list';
+
 import axios, { endpoints } from 'src/lib/axios';
 import { generateMockTasks } from 'src/lib/mock-data';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -74,12 +76,13 @@ export function KpisPrototipoView() {
     (async () => {
       try {
         const res = await axios.get(endpoints.tasks.list, { params: { all: 'true' } });
-        const items = (res.data.items as Task[]) ?? [];
-        // Em dev, se a API real não tem tasks ainda, preenche com dados fake só para demonstrar o layout
-        if (active) setTasks(items.length > 0 || !import.meta.env.DEV ? items : generateMockTasks());
+        const items = normalizeList<Task>(res.data);
+        // Protótipo sem back-end real conectado: se a resposta vier vazia
+        // (ex.: back-end real ainda sem tasks), preenche com dados fake em
+        // vez de deixar a tela sem nada para mostrar numa demo.
+        if (active) setTasks(items.length > 0 ? items : generateMockTasks());
       } catch {
-        // silencioso em produção; em dev preenche com dados fake em vez de zerar tudo
-        if (active) setTasks(import.meta.env.DEV ? generateMockTasks() : []);
+        if (active) setTasks(generateMockTasks());
       }
     })();
     return () => {

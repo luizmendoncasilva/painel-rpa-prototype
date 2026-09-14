@@ -9,9 +9,10 @@ import {
 } from './mock-data';
 
 // ----------------------------------------------------------------------
-// Roteador de mocks: intercepta chamadas à API quando ela não está no ar
-// (apenas em dev — ver src/lib/axios.ts) e devolve dados fake no mesmo
-// formato da API real, para visualizar as telas preenchidas.
+// Roteador de mocks: intercepta chamadas à API quando ela falha (ver
+// src/lib/axios.ts) e devolve dados fake no mesmo formato da API real.
+// Este protótipo não está conectado ao back-end real da BHub em nenhum
+// ambiente, então isso roda tanto em dev quanto na demo publicada.
 // ----------------------------------------------------------------------
 
 function fakeResponse<T>(data: T, config: InternalAxiosRequestConfig): AxiosResponse<T> {

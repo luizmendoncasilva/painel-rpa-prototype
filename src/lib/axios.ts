@@ -19,9 +19,11 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Em dev, se a API real não responder (sem back-end local), usamos dados
-    // fake só para conseguir visualizar as telas. Nunca roda em produção.
-    if (import.meta.env.DEV && !error.response) {
+    // Este protótipo não está conectado ao back-end real da BHub (nem em dev,
+    // nem em produção) — sempre que a chamada falhar, por qualquer motivo
+    // (rede, CORS, 401, 404...), cai para dados fake no mesmo formato da API
+    // real, para as telas nunca ficarem vazias ou quebradas numa demo.
+    if (error.config) {
       const mocked = mockResponseFor(error.config as InternalAxiosRequestConfig);
       if (mocked) {
         return Promise.resolve(mocked as AxiosResponse);
