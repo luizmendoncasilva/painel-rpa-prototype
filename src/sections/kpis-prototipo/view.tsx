@@ -325,7 +325,7 @@ export function KpisPrototipoView() {
 
         <TabsContent value="processos" className="mt-4">
           <p className="mb-3 text-xs text-muted-foreground">
-            Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs.
+            Ordenado por volume de falhas. Clique no processo para abrir a trilha de bots e as listas de CNPJs. Clique numa falha para ver o motivo.
           </p>
           <div className="flex flex-col gap-2.5">
             {[...processosFiltrados]

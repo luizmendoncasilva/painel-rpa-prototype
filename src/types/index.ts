@@ -115,10 +115,14 @@ export interface ProcessoConfig {
 
 export type ComboStatus = 'sucesso' | 'sucesso_parcial' | 'falha' | 'em_andamento' | 'pendente';
 
+// Já simplificada (src/utils/falha-simplificada) — nunca carrega o erro
+// técnico cru, pois é exibida para a operação no painel e nos relatórios.
 export interface StageFailure {
   categoria: string;
-  mensagem: string;
+  orientacao: string;
   chamado: string;
+  tentativas: number;
+  maxTentativas: number;
 }
 
 export interface ProcessoCaseRow {

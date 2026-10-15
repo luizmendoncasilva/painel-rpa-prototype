@@ -1,5 +1,7 @@
 import type { Task, TaskStatus, ComboStatus, StageFailure, ProcessoConfig, ProcessoCaseRow } from 'src/types';
 
+import { simplificarFalha } from 'src/utils/falha-simplificada';
+
 // ----------------------------------------------------------------------
 // Catálogo de processos de negócio — glossário pedido pelo produto na call
 // de alinhamento (27/ago): nome, o que o processo faz, quais bots/etapas o
@@ -110,14 +112,18 @@ function extractBase(payload: Record<string, unknown> | null): string | null {
 }
 
 function extractFailure(task: Task | undefined): StageFailure | null {
-  if (!task || task.status !== 'FAILED' || !task.error_payload) return null;
-  const p = task.error_payload;
-  const categoria = p.categoria as string | undefined;
-  if (!categoria) return null;
+  if (!task || task.status !== 'FAILED') return null;
+  const p = task.error_payload ?? {};
+  const { motivo, orientacao } = simplificarFalha(
+    p.categoria as string | undefined,
+    (p.mensagem as string | undefined) ?? task.error
+  );
   return {
-    categoria,
-    mensagem: (p.mensagem as string | undefined) ?? task.error ?? '',
+    categoria: motivo,
+    orientacao,
     chamado: (p.chamado as string | undefined) ?? '',
+    tentativas: task.attempt,
+    maxTentativas: task.max_attempts,
   };
 }
 

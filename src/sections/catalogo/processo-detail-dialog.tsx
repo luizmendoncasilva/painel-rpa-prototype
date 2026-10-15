@@ -65,7 +65,7 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
           status_combinado: COMBO_STATUS_LABEL[c.comboStatus],
           quebrou_em: failedStage?.label ?? '',
           categoria: failure?.categoria ?? '',
-          mensagem: failure?.mensagem ?? '',
+          orientacao: failure?.orientacao ?? '',
           chamado: failure?.chamado ?? '',
           atualizado_em: fDateTime(c.updatedAt),
         };
@@ -178,8 +178,8 @@ export function ProcessoDetailDialog({ processo, tasks, view, onClose }: Props) 
                                   <Badge variant="destructive" className="w-fit text-[11px]">
                                     {failure.categoria}
                                   </Badge>
-                                  <span className="font-mono text-[11px] text-muted-foreground">
-                                    {failure.mensagem}
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {failure.orientacao}
                                   </span>
                                 </div>
                               ) : (

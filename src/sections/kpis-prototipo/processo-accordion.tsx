@@ -1,5 +1,5 @@
-import type { Task, ProcessoConfig } from 'src/types';
 import type { CatalogoViewMode } from 'src/sections/catalogo/view';
+import type { Task, ProcessoConfig, ProcessoCaseRow } from 'src/types';
 
 import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -25,6 +25,8 @@ import {
 
 import { MiniTrail } from 'src/sections/catalogo/mini-trail';
 
+import { FalhaDetailDialog } from './falha-detail-dialog';
+
 // ----------------------------------------------------------------------
 
 function fDuration(seconds: number): string {
@@ -45,6 +47,7 @@ interface Props {
 
 export function ProcessoAccordion({ processo, tasks, view, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const [falhaSelecionada, setFalhaSelecionada] = useState<ProcessoCaseRow | null>(null);
   const interno = view === 'interno';
 
   const cases = useMemo(() => buildProcessoCases(processo, tasks), [processo, tasks]);
@@ -153,11 +156,13 @@ export function ProcessoAccordion({ processo, tasks, view, defaultOpen = false }
               <CaseTable cases={exitos} processo={processo} interno={false} />
             </TabsContent>
             <TabsContent value="falhas" className="mt-3">
-              <CaseTable cases={falhas} processo={processo} interno={interno} />
+              <CaseTable cases={falhas} processo={processo} interno={interno} onSelect={setFalhaSelecionada} />
             </TabsContent>
           </TabsRoot>
         </div>
       )}
+
+      <FalhaDetailDialog caso={falhaSelecionada} processo={processo} onClose={() => setFalhaSelecionada(null)} />
     </div>
   );
 }
@@ -168,10 +173,12 @@ function CaseTable({
   cases,
   processo,
   interno,
+  onSelect,
 }: {
-  cases: ReturnType<typeof buildProcessoCases>;
+  cases: ProcessoCaseRow[];
   processo: ProcessoConfig;
   interno: boolean;
+  onSelect?: (caso: ProcessoCaseRow) => void;
 }) {
   if (cases.length === 0) {
     return (
@@ -204,7 +211,11 @@ function CaseTable({
             const failedStage = processo.stages.find((s) => c.stageFailure[s.queue]);
             const failure = failedStage ? c.stageFailure[failedStage.queue] : null;
             return (
-              <TableRow key={c.key}>
+              <TableRow
+                key={c.key}
+                onClick={onSelect ? () => onSelect(c) : undefined}
+                className={cn(onSelect && 'cursor-pointer hover:bg-muted/50')}
+              >
                 <TableCell className="text-sm font-medium">{c.empresa}</TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">{c.cnpj ?? '—'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{c.base ?? '—'}</TableCell>
