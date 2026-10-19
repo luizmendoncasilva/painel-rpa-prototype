@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 
-import { paths } from 'src/routes/paths';
+import { useBasePath } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -16,10 +16,12 @@ import { ContratoDados } from 'src/sections/kpis-prototipo/contrato-dados';
 // ----------------------------------------------------------------------
 
 export function EspecificacaoView() {
+  const basePath = useBasePath();
+
   return (
     <DashboardContent maxWidth="xl">
       <Button variant="ghost" size="sm" className="mb-3 -ml-2 gap-1.5 text-muted-foreground" asChild>
-        <RouterLink href={paths.dashboard.painel}>
+        <RouterLink href={`${basePath}/painel`}>
           <ArrowLeft className="size-4" />
           Voltar ao Painel
         </RouterLink>

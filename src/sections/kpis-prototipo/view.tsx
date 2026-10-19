@@ -3,7 +3,7 @@ import type { Task } from 'src/types';
 import { SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 
-import { paths } from 'src/routes/paths';
+import { useBasePath } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useViewMode } from 'src/hooks/use-view-mode';
@@ -62,6 +62,7 @@ function extractBase(payload: Record<string, unknown> | null): string | null {
 // ----------------------------------------------------------------------
 
 export function KpisPrototipoView() {
+  const basePath = useBasePath();
   const { view } = useViewMode();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterMotor, setFilterMotor] = useState('');
@@ -278,7 +279,7 @@ export function KpisPrototipoView() {
                 </p>
               </div>
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" asChild>
-                <RouterLink href={paths.dashboard.especificacao}>Ver especificação técnica →</RouterLink>
+                <RouterLink href={`${basePath}/especificacao`}>Ver especificação técnica →</RouterLink>
               </Button>
             </div>
 

@@ -1,0 +1,89 @@
+/*
+ * Movimento de entrada — o lugar único.
+ *
+ * Toda tela abre com os blocos subindo e aparecendo em cascata, como na V4.0.
+ * A V4.0 fazia isso com cinco implementações, cada tela com a sua; aqui é uma
+ * regra só: o contêiner marcado com `data-cascata` faz cada filho direto
+ * entrar um pouco depois do anterior. A moldura de página de cada protótipo
+ * leva a marca, então tela nova nasce animada sem pedir.
+ *
+ * Para mudar o ritmo de tudo, mexa só nestas quatro variáveis.
+ *
+ * Exceções, para usar pouco:
+ * - `data-sem-entrada` num filho: ele aparece sem movimento.
+ * - Moldura dentro de moldura (ou bloco que contém uma): o bloco de fora não
+ *   anima, passa a vez para os de dentro — sem fade dobrado. A contagem de
+ *   dentro começa do lugar desse bloco na moldura de fora.
+ *
+ * Mora em @layer base de propósito: peça que já traga animação própria (um
+ * utilitário do Tailwind, como os da V4.0) mantém a dela.
+ *
+ * Toca ao montar: filtro que só troca o conteúdo não repete o movimento.
+ */
+
+:root {
+  --entrada-duracao: 520ms;
+  --entrada-distancia: 10px;
+  --entrada-intervalo: 70ms;
+  --entrada-curva: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(var(--entrada-distancia));
+  }
+}
+
+@layer base {
+  /* `backwards`: espera invisível durante o atraso e, depois de entrar, não
+     deixa transform para trás — o hover que levanta o cartão segue valendo. */
+  [data-cascata] > * {
+    --entrada-ordem: 0;
+    animation: entrada var(--entrada-duracao) var(--entrada-curva) backwards;
+    animation-delay: calc(
+      (var(--entrada-base, 0) + var(--entrada-ordem)) *
+      var(--entrada-intervalo)
+    );
+  }
+
+  /* A ordem na cascata. Do 8º bloco em diante entram juntos: página longa não
+     demora para aparecer. */
+  [data-cascata] > :nth-child(2) {
+    --entrada-ordem: 1;
+  }
+  [data-cascata] > :nth-child(3) {
+    --entrada-ordem: 2;
+  }
+  [data-cascata] > :nth-child(4) {
+    --entrada-ordem: 3;
+  }
+  [data-cascata] > :nth-child(5) {
+    --entrada-ordem: 4;
+  }
+  [data-cascata] > :nth-child(6) {
+    --entrada-ordem: 5;
+  }
+  [data-cascata] > :nth-child(7) {
+    --entrada-ordem: 6;
+  }
+  [data-cascata] > :nth-child(n + 8) {
+    --entrada-ordem: 7;
+  }
+
+  [data-cascata] > [data-sem-entrada],
+  [data-cascata] > [data-cascata],
+  [data-cascata] > :has([data-cascata]) {
+    animation: none;
+  }
+
+  [data-cascata] [data-cascata] {
+    --entrada-base: var(--entrada-ordem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-cascata] > * {
+      animation: none;
+    }
+  }
+}

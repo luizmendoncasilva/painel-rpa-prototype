@@ -6,6 +6,7 @@ import { Navigate } from 'react-router';
 import { CONFIG } from 'src/global-config';
 
 import { authRoutes } from './auth';
+import { propostaRoutes } from './proposta';
 import { dashboardRoutes } from './dashboard';
 
 // ----------------------------------------------------------------------
@@ -23,6 +24,9 @@ export const routesSection: RouteObject[] = [
 
   // Dashboard
   ...dashboardRoutes,
+
+  // Proposta (chassi do Cockpit)
+  ...propostaRoutes,
 
   // No match
   { path: '*', element: <Page404 /> },

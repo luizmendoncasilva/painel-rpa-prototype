@@ -6,6 +6,9 @@
 *************************************** */
 @import '@fontsource-variable/inter';
 
+/* Entrada em cascata ([data-cascata]) — só age onde a marca é usada. */
+@import './theme/movimento.css';
+
 @custom-variant dark (&:is(.dark *));
 
 /** **************************************
@@ -234,4 +237,32 @@ input[type='number']::-webkit-outer-spin-button {
 input[type='number']::-webkit-inner-spin-button {
   margin: 0;
   -webkit-appearance: none;
+}
+
+/** **************************************
+* Tema Cockpit — delta do chassi novo-chassi-v1 sobre os tokens acima (que já
+* são os do BSystem). Só vale com a classe `cockpit` no <html>, posta pelo
+* CockpitLayout nas rotas /proposta; o /dashboard segue igual.
+*************************************** */
+:root {
+  /* Azul-marinho do chassi: sidebar e moldura em volta do conteúdo. */
+  --cockpit-navy: #0f1727;
+}
+html.cockpit {
+  /* Forma do Cockpit: raio 10px. */
+  --radius: 0.625rem;
+
+  /* No Cockpit o coral é a cor de ação. */
+  --primary: var(--coral-bold);
+  --primary-foreground: #ffffff;
+}
+html.cockpit body {
+  font-family: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+/* Títulos de página na escala do Cockpit (text-lg) sem mexer nas views, que
+   são compartilhadas com o /dashboard. */
+html.cockpit main h4.text-2xl {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  letter-spacing: -0.025em;
 }

@@ -2,7 +2,7 @@ import type { FormEvent } from 'react';
 
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { CONFIG } from 'src/global-config';
 
@@ -19,6 +19,7 @@ import {
   AlertDescription,
 } from 'src/components/ui';
 
+import { safeReturnTo } from 'src/auth/guard';
 import { useAuthContext } from 'src/auth/context';
 
 // ----------------------------------------------------------------------
@@ -26,6 +27,7 @@ import { useAuthContext } from 'src/auth/context';
 export function SignInView() {
   const navigate = useNavigate();
   const { signIn } = useAuthContext();
+  const [searchParams] = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +42,7 @@ export function SignInView() {
 
     try {
       await signIn({ email, password });
-      navigate('/dashboard/execucoes', { replace: true });
+      navigate(safeReturnTo(searchParams.get('returnTo')), { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Credenciais inválidas.';
       setError(message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
